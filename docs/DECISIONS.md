@@ -79,7 +79,10 @@ found a reason to deviate.
   the lines that do arrive are still worth seeing.
 - **Backlog merging.** Inside the worker, "lag ≥ 5 s" is measured as the span between the oldest
   and newest waiting utterance of a session, which needs no clock and only matters when there is
-  more than one job to merge.
+  more than one job to merge. A segment Whisper returns from merged audio belongs to the
+  utterance under its midpoint but keeps the span of every piece it covers (more than half of
+  the piece or a second of it); clamped to one piece, a mic line of echo hid from the echo guard
+  the 相手 lines it repeated.
 - **Language 自動.** Utterances are decoded with language `auto` until one of 3 s or longer has
   been decoded; its detected language is then locked. The session keeps `language: "auto"`; the
   detected language is logged as a `language_detected` event.

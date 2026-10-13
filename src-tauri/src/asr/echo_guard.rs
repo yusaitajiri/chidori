@@ -156,6 +156,26 @@ mod tests {
         assert_eq!(echoes_of_others(&all[2], &mine, &all), vec!["m"]);
     }
 
+    // From a slow CPU run: under backlog one mic line held echo of four 相手 lines. With the span
+    // of the merged pieces it came from, it is caught; clamped to its last piece, it was not.
+    #[test]
+    fn merged_mic_line_is_an_echo_over_its_whole_span() {
+        let text = "それは表情と助けというお客称でした。そうそうなあ助けと表情がいました。あん?俺はこの頃とても知らなことがあるんだ。何が?お母が死んでからは誰だか知らんが俺にクリア真っ先なんかを毎日毎日くれるんだよ。ふん誰が?";
+        let others = [
+            line("a1", 26_592, 30_112, "話し声はだんだん近くなりました。それは表情と助けというお客称でした。"),
+            line("a2", 30_480, 34_688, "そうそう、なぁ助けと表情がいました。"),
+            line("a3", 34_832, 38_992, "俺はこの頃とても不思議なことがあるんだ。何が?"),
+            line(
+                "a4",
+                39_264,
+                48_048,
+                "おかが死んでからは誰だか知らんが、俺にクリアマスタキなんかを毎日毎日くれるんだよ。ふん、誰が?それがわからんのだよ。俺の知らんうちに置いていくんだ。",
+            ),
+        ];
+        assert!(!is_echo_of_any(&line("m", 39_296, 48_128, text), &others));
+        assert!(is_echo_of_any(&line("m", 26_700, 48_128, text), &others));
+    }
+
     #[test]
     fn different_words_at_the_same_time_are_kept() {
         let others = [line("a", 10_000, 15_000, "それでは来週の予定を確認しましょう")];

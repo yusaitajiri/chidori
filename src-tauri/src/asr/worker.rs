@@ -25,6 +25,8 @@ pub const SAMPLE_RATE: usize = 16_000;
 pub const MERGE_MAX_MS: u64 = 25_000;
 pub const MERGE_GAP_MS: u64 = 200;
 pub const BACKLOG_LAG_MS: u64 = 5_000;
+/// How much of a merged piece a segment must cover to stretch its span over that piece.
+const SPAN_MIN_MS: u64 = 1_000;
 pub const LANGUAGE_LOCK_MIN_MS: u64 = 3_000;
 /// Below this much speech, Whisper tends to echo its prompt back (a lone 「四」 came out as
 /// 「よろしくお願いします。」, the primer's last sentence), so such clips get only the word list.
@@ -505,7 +507,11 @@ pub struct MergedPiece {
     pub rms_dbfs: f32,
 }
 
-/// Maps a segment in merged time back to its piece by its midpoint, clamped to the piece.
+/// Maps a segment in merged time back to original time. Its utterance is the piece under its
+/// midpoint; its span runs from the first to the last piece it really covers (more than half of
+/// the piece or a second of it, so Whisper's loose edges don't reach into a neighbour). Keeping
+/// the whole span matters to the echo guard, which compares a line only with what was said
+/// around its own time.
 pub fn map_to_piece(map: &[MergedPiece], t0: u64, t1: u64) -> Option<(usize, u64, u64)> {
     if map.is_empty() {
         return None;
@@ -522,9 +528,17 @@ pub fn map_to_piece(map: &[MergedPiece], t0: u64, t1: u64) -> Option<(usize, u64
             .map(|(i, _)| i)
             .unwrap()
     });
-    let p = &map[idx];
-    let rel = |t: u64| t.saturating_sub(p.offset_ms).min(p.len_ms);
-    let (s, e) = (p.start_ms + rel(t0), p.start_ms + rel(t1));
+    let covers = |p: &MergedPiece| {
+        let overlap = t1.min(p.offset_ms + p.len_ms).saturating_sub(t0.max(p.offset_ms));
+        overlap * 2 > p.len_ms.min(2 * SPAN_MIN_MS)
+    };
+    let first = map.iter().position(covers).map_or(idx, |i| i.min(idx));
+    let last = map.iter().rposition(covers).map_or(idx, |i| i.max(idx));
+    let at = |i: usize, t: u64| {
+        let p = &map[i];
+        p.start_ms + t.saturating_sub(p.offset_ms).min(p.len_ms)
+    };
+    let (s, e) = (at(first, t0), at(last, t1));
     Some((idx, s, e.max(s)))
 }
 
@@ -917,6 +931,23 @@ mod tests {
         assert_eq!(map_to_piece(&map, 1_800, 2_900), Some((1, 30_000, 30_700)));
         // Midpoint inside the first piece: end clamps to its end.
         assert_eq!(map_to_piece(&map, 1_000, 2_600), Some((0, 11_000, 12_000)));
+    }
+
+    // Seen in a slow nightly run: one segment ran over three merged mic pieces, and clamping it
+    // to the midpoint's piece hid the first two from the echo guard.
+    #[test]
+    fn a_segment_over_several_pieces_keeps_its_whole_span() {
+        let c = ctx();
+        let pieces = vec![
+            job(&c, SourceId::Mic, "utt_1", 26_000, 4_000),
+            job(&c, SourceId::Mic, "utt_2", 30_400, 800),
+            job(&c, SourceId::Mic, "utt_3", 39_200, 9_000),
+        ];
+        let (_, map) = merge_pieces(&pieces);
+        assert_eq!(map[2].offset_ms, 5_200);
+        assert_eq!(map_to_piece(&map, 100, 14_100), Some((2, 26_100, 48_100)));
+        // A start 300 ms before the gap is Whisper's slack, not speech from the piece before.
+        assert_eq!(map_to_piece(&map, 4_700, 14_100), Some((2, 39_200, 48_100)));
     }
 
     #[test]
