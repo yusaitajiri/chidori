@@ -4,6 +4,10 @@ All notable changes are listed here. Versions follow [SemVer](https://semver.org
 
 ## [Unreleased]
 
+### Changed
+
+- Kikitori joins the Kudagitsune family: the voice you hear, the start dot and 停止 are 朱 (vermilion) instead of red, and the bird is now Kikitori's mon, a plover over a wave, in the app icon, the logo, the tray and the PDF footer. In dark mode 相手's name is easier to read.
+
 ## [0.3.0] - 2026-10-10
 
 ### Added

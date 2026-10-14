@@ -215,8 +215,8 @@ found a reason to deviate.
   document: the preamble, then one call per block (`#entry`, `#shot`, `#note`) with every piece of
   session text in a string literal, so none of it can be read as Typst syntax. Calls rather than
   a JSON data file keep the exported `.typ` readable. The preamble alone decides the look: A4,
-  18 mm margins, Yu Gothic (Meiryo and MS Gothic if missing), 相手 in red, and a footer with the
-  app's name, small, beside the red bird. Fonts are read from `%WINDIR%\Fonts` for each export
+  18 mm margins, Yu Gothic (Meiryo and MS Gothic if missing), 相手 in 朱, and a footer with the
+  app's name, small, beside its mon (an SVG in the template, the brand's small drawing). Fonts are read from `%WINDIR%\Fonts` for each export
   rather than kept in memory (about 15 ms), and Typst's memo cache is cleared after each one. A
   one-minute session with a screenshot renders in about 0.2 s (debug build) to 330 KB. Typst is
   Apache-2.0: its LICENSE and NOTICE are installed in `licenses/`. The print HTML stays only as
@@ -246,17 +246,19 @@ found a reason to deviate.
   pill tabs, a phone-style tab bar), no pink tints doing the identity work, no decorative waves
   that would make the live line read as decoration, and a finished transcript gets most of the
   window. Three colours: white and neutral greys, near-black ink (also the everyday accent) and
-  true red `#D8232A` (dark mode `#FF3B3F`, which keeps the hue on near-black and gives 相手's name
-  5:1; `#FF5B5B` read salmon). **Red is the voice you hear**: 相手's line and name, the start dot
-  and 停止. 自分 is ink. Alerts (banners, 要復元) are inverted, paper on ink, so red never means an
-  error. 「遅れ n秒」 30 s or more behind (FR-25) is yellow (`#946B00`, dark mode `#F5C400`): in an
-  app made of red, a red warning would not stand out. It (and 一時停止中) is written on the line's
+  朱 (vermilion) `#B0501F` (dark mode `#EBA57E`, 8.5:1 for 相手's name). 朱 is Kikitori's colour in
+  the Kudagitsune family, where each app brings one colour and one mon (the `my-brand` repo); it
+  replaced the true red `#D8232A` of 0.3, which sat on top of the brand's error brick. 停止 keeps
+  the deep 朱 in dark mode too, so its white text reads. **朱 is the voice you hear**: 相手's line
+  and name, the start dot and 停止. 自分 is ink. Alerts (banners, 要復元) are inverted, paper on
+  ink, so 朱 never means an error. 「遅れ n秒」 30 s or more behind (FR-25) is yellow (`#946B00`,
+  dark mode `#F5C400`): in an app made of 朱, a warm warning would not stand out. It (and 一時停止中) is written on the line's
   left end, on paper, since the row under the line has no room left beside the timer. No glows,
   gradients, blur or pink layers; the only tint lies under the line while recording, and a hint of
   it after.
 - **The line is real sound** (`components/Deck.tsx`, `lib/line.ts`, `store/line.ts`). While
   recording, the line across the window is drawn from the levels the backend sends ten times a
-  second: 相手 rises above it in red and 自分 dips below it in ink (a single source rises above,
+  second: 相手 rises above it in 朱 and 自分 dips below it in ink (a single source rises above,
   whichever it is), lightly blurred so a lone step is not a spike. A pen tip moves right from
   where the start dot was and, near the end, the line scrolls under it. Screenshots are dots on
   the baseline and a pause leaves a dotted gap. While finishing, the steps not yet written are
@@ -280,7 +282,7 @@ found a reason to deviate.
   scrolls the transcript there and marks the row (`seek` in the transcript store). The same shape
   is the session's picture in 履歴.
 - **One dot.** Before a recording the expanded window has no transcript to show, so the deck
-  takes the free space under the source picker, and the red dot sits in its middle with 開始
+  takes the free space under the source picker, and the 朱 dot sits in its middle with 開始
   written on it: centred in the space above the model's line at the bottom and lifted a little
   to the optical centre (45% of that height), because at the exact middle it looks low. It is
   three layers: the dot on two rings with wavy rims, each a little bigger and paler than the one
@@ -293,16 +295,21 @@ found a reason to deviate.
   flattens the session's line and the dot rises back to the middle on its rings. The compact
   window has no free space: its dot waits at the left end of an empty line, 開始 beside it. The
   dot is the app's only circle (its rings are wavy); switch knobs are rounded squares.
-- **The mark is a bird.** Kikitori reads as 聞き + とり, and とり is a bird, so the red dot became a
-  red bird: a round head with a pointed tail, an ink beak and an eye in the background colour.
-  The app icon (`src-tauri/icons/icon.svg`, the source of every size `tauri icon` writes) sets it
-  on the white tile with its outline rippling out in three fading wavy layers, the start dot's
-  rings carried over. The logo (`docs/images/kikitori-logo.svg` and its dark twin) is `kikitori`
-  in round strokes with the bird as its o. The title bar shows the logo (`components/Logo.tsx`,
-  the same drawing in the theme's ink and red, so it follows light and dark), and the PDF footer
-  draws the bird. The tray shows the bird alone when idle, with its red ripples while recording
-  and grey ones while paused or finishing (`icons/tray/`). Centred red-dot icons were considered
-  and dropped as too common.
+- **The mark is a mon.** Kikitori reads as 聞き + とり, and とり is a bird, so its mark is the
+  Kudagitsune family's mon for it: 丸に波に千鳥, a plover over a wave, the wave being the
+  recording's line, in the family's ring. Every app of the brand has a mon in the same ring and
+  its own colour, with no letters, recognisable in solid black at 16 px. The drawing lives in the
+  `my-brand` repo (`tools/build_mon.py`); the files here are made from it and are not edited by
+  hand. The app icon (`src-tauri/icons/icon.svg`, the source of every size `tauri icon` writes) is
+  the mon on a paper disc, so it reads on light and dark taskbars; `icon.ico` is the brand's own,
+  whose sizes from 24 px down use the small drawing (heavier ring, no fine cut-outs), since
+  `tauri icon` would only shrink the large one. The logo (`docs/images/kikitori-logo.svg` and its
+  dark twin) is `kikitori` in round strokes with the mon as its o. The title bar shows the logo
+  (`components/Logo.tsx`, the small drawing in the theme's ink and 朱, so it follows light and
+  dark), and the PDF footer draws the mon. The tray (`icons/tray/`, 32 px renders of the small
+  drawing) shows the mon on its paper disc when idle, the disc turned 朱 with the mon cut out
+  while recording, and the mon in grey while paused or finishing. The bird of 0.1–0.3 (a red head
+  with rippling outlines) was retired with the move to the family.
 - **What to listen to is a source and a conversation switch.** The source opens one list:
   システム全体, マイクだけ, then the apps (those playing first, その他 after, with a refresh
   button, FR-11). Under it, 「会話として録音」 is FR-12's mic switch, worded as what it is for,
@@ -312,7 +319,7 @@ found a reason to deviate.
   compact window shows the choice as one line (`Zoom · 会話`) that opens the picker over the
   whole window, and loads the app list when it appears, so the line carries the app's icon.
 - **Apps show their sound.** In the source picker each app with an audio session shows its sound
-  beside its name while it plays (`AppWave`): the last two seconds as a small red line on a grey
+  beside its name while it plays (`AppWave`): the last two seconds as a small 朱 line on a grey
   baseline, in the field and in the list. It is real sound, not a decorative wave: the peak
   meters Windows keeps for every audio session (the volume mixer's bars), read by
   `audio::win::meters` only for the apps on screen, twenty times a second, with nothing captured
@@ -321,7 +328,7 @@ found a reason to deviate.
   like the recording's line: redrawn at the screen's rate it cost about 40% of a core on a 165 Hz
   screen (Chromium, measured), stepping about 4%, and nothing once it is quiet.
 - **Navigation is words in the title bar**: 録音 · 履歴 · 設定 in the expanded window, the current
-  one underlined, 録音 with a red dot while recording; the compact window keeps its icons. While
+  one underlined, 録音 with a 朱 dot while recording; the compact window keeps its icons. While
   recording the title bar shows the state and the source in place of the name, and away from the
   main view that leads back to the recording. No bottom tabs: a phone pattern that would add a
   second way to navigate, the largest coloured area in the app, and a second layer of controls
@@ -340,10 +347,10 @@ found a reason to deviate.
 - **Settings is a list** of its sections, each showing what it is set to now; a section opens with
   a back arrow. A pill tab per section would overflow the 420 px window with no sign that the
   tabs scroll.
-- **Projects are coloured squares** (FR-64), the one place colours beyond white, ink and red
+- **Projects are coloured squares** (FR-64), the one place colours beyond white, ink and 朱
   appear, so they stay small: a 10 px rounded square before a title, never a fill, a chip or a
   tinted row. Squares, because the dot is the app's only circle. Seven muted colours, light and
-  dark shades, none of them red (red is the voice you hear); a new project gets one no other
+  dark shades, none of them red or 朱 (朱 is the voice you hear); a new project gets one no other
   project uses. A session joins a project from the swatch beside the recording's title, the line
   under a finished session's title, History's row menu (a submenu) or 選択 (a button beside
   削除), each a native menu ending in 「新しいプロジェクト…」. History filters by project with a
@@ -384,12 +391,12 @@ found a reason to deviate.
   window seldom outlives one. A picked window that has closed or been minimized falls back to the
   cursor's screen, with the usual 「（カーソルの画面）」 toast. The picked window travels in
   `recording://state` (`shotWindow`), so the menu's check marks follow the backend.
-- **Speaker names** are coloured text: 相手 red, 自分 ink. A darker red for 自分 would be hard to
+- **Speaker names** are coloured text: 相手 朱, 自分 ink. A darker 朱 for 自分 would be hard to
   tell from 相手 and nearly identical with red-green colour blindness. Provisional text is plain
   pencil grey.
 - **Hairlines part a screen.** The only waves are the sound and the start dot's rings. Rounded
   rectangles stay for cards, fields, menus and secondary buttons; the one filled button of a
-  place (the ink primary, the red 停止) is a pill; dialogs are centred sheets with full-width
+  place (the ink primary, the 朱 停止) is a pill; dialogs are centred sheets with full-width
   pills. Transcript markers (pause, reconnect) keep a straight line.
 - **Japanese line breaks** use `word-break: auto-phrase` (WebView2, with `lang="ja"`), so words
   such as ヘッドホン and ください no longer split across lines.
@@ -442,7 +449,7 @@ found a reason to deviate.
   started by the hotkey uses the last-used source the picker never showed.
 - **The star** sits between the camera and the cut while recording, and on every line's hover
   actions (live too, unlike editing). An important line has an ink stroke in the left margin
-  and semibold text; red stays the voice you hear. The compact window's two lines show a star.
+  and semibold text; 朱 stays the voice you hear. The compact window's two lines show a star.
 - **More hotkeys.** Important mark and cut have hotkeys too (off until set), since a meeting
   app is usually in front. Pressed from another app, they confirm with a toast; all four share
   one registration loop, and one set to the same keys as another is reported, not registered.

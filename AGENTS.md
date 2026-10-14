@@ -12,7 +12,8 @@ through `whisper-rs`, WASAPI capture.
 - `docs/DECISIONS.md` holds every choice the spec leaves open and every deviation from it. Where
   the spec is silent, pick the simplest option that keeps the UI one-tap simple and add a line
   there. When you change something the spec defines, update the spec section too.
-- The look (white paper, ink, one red; "one dot, one line") is deliberate. Read
+- The look (white paper, ink, one 朱; "one dot, one line") is deliberate. 朱 and the mon come from
+  the Kudagitsune brand (the `my-brand` repo); the icon files are made there, not edited here. Read
   `docs/DECISIONS.md` → UI before changing the UI.
 
 ## Commands

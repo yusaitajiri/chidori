@@ -19,7 +19,7 @@ export function Brand() {
 }
 
 /**
- * What is recording, in place of the name while a recording runs: a red dot (grey while paused or
+ * What is recording, in place of the name while a recording runs: a 朱 dot (grey while paused or
  * finishing), the state and the source. Away from the main view it leads back to the recording;
  * in the compact window's main view, which has no room for the recording's header, it opens a
  * native menu to switch the source (FR-17).
@@ -97,7 +97,7 @@ export function WindowButtons({ layoutToggle = true }: { layoutToggle?: boolean 
   );
 }
 
-/** 録音 · 履歴 · 設定 as words; the current place is underlined, and 録音 carries a red dot while recording. */
+/** 録音 · 履歴 · 設定 as words; the current place is underlined, and 録音 carries a 朱 dot while recording. */
 function Places() {
   const { t } = useTranslation();
   const view = useUi((s) => s.view);

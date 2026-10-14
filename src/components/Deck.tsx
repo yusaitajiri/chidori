@@ -311,10 +311,10 @@ class DeckLine implements Animated {
 
 /**
  * The bottom of the main window and of a past session: one line across the window. Before a
- * recording a red dot on two wavy rings waits in the middle of the free space (in the compact
+ * recording a 朱 dot on two wavy rings waits in the middle of the free space (in the compact
  * window, at the start of an empty line). Pressing it sends the dot down to the bottom, where it
- * shrinks into a pen tip that draws the line as it moves: 相手 above the line in red, 自分 below
- * it in ink, over a red tint. When the session is saved the pen lifts and the line zooms out to
+ * shrinks into a pen tip that draws the line as it moves: 相手 above the line in 朱, 自分 below
+ * it in ink, over a 朱 tint. When the session is saved the pen lifts and the line zooms out to
  * the whole session, which you can point at for the time and click to jump there; the finished
  * session's buttons sit under it.
  */
@@ -821,7 +821,7 @@ function FinishingRow() {
   );
 }
 
-/** Play (when the session kept its sound), copy, 書き出し, more, and 「新しい録音」 with the red dot it started from. */
+/** Play (when the session kept its sound), copy, 書き出し, more, and 「新しい録音」 with the 朱 dot it started from. */
 function ReviewRow({ compact, sessionId, folder, onNew, player }: { compact: boolean; sessionId: string; folder?: string; onNew: boolean; player: Player }) {
   const { t } = useTranslation();
   const setExportFor = useUi((s) => s.setExportFor);

@@ -1,5 +1,5 @@
-//! Tray icon (FR-90). The app icon's bird, alone when idle, with its red ripples while recording
-//! and grey ones while paused or finishing.
+//! Tray icon (FR-90). The app's mon on its paper disc when idle, the disc turned 朱 while recording,
+//! and the mon in grey while paused or finishing.
 
 use tauri::image::Image;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
@@ -48,12 +48,13 @@ fn labels(locale: Locale) -> Labels {
     }
 }
 
-// 32 px renders of icons/tray/*.svg; the bird stays put, so starting a recording only adds ripples.
+// 32 px renders of icons/tray/*.svg (the brand's small mon drawing); the mon stays put, so starting a
+// recording only fills the disc.
 const TRAY_IDLE: Image<'_> = include_image!("./icons/tray/idle.png");
 const TRAY_RECORDING: Image<'_> = include_image!("./icons/tray/recording.png");
 const TRAY_PAUSED: Image<'_> = include_image!("./icons/tray/paused.png");
 
-/// The tray picture for a state: the ripples are the sound the bird is hearing.
+/// The tray picture for a state: a 朱 disc while it listens.
 fn icon_for(state: UiState) -> Image<'static> {
     match state {
         UiState::Recording => TRAY_RECORDING,

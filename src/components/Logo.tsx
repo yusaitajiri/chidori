@@ -1,6 +1,7 @@
 /**
- * Kikitori's logo: the name in round strokes with the red bird of the app icon as its o, the same
- * drawing as `docs/images/kikitori-logo.svg`, in the theme's ink, red and background.
+ * Kikitori's logo: the name in round strokes with its mon, 丸に波に千鳥, as the o: the small drawing
+ * of the Kudagitsune mon (its ring the letter's round), as in `docs/images/kikitori-logo.svg`, in the
+ * theme's ink and 朱.
  */
 export function Logo({ className = "" }: { className?: string }) {
   return (
@@ -19,9 +20,22 @@ export function Logo({ className = "" }: { className?: string }) {
         <circle cx="318" cy="-160.88" r="14.88" />
         <circle cx="765.47" cy="-160.88" r="14.88" />
       </g>
-      <path d="M476 -93.9L547.16 -109.71A54 54 0 1 1 511.86 -30.43Z" className="fill-rec" />
-      <path d="M606.94 -56.18L637.47 -76.6L600.93 -80.29Z" className="fill-fg stroke-fg" strokeWidth={2.54} strokeLinejoin="round" />
-      <circle cx="581.56" cy="-75.36" r="5.4" className="fill-bg" />
+      <g transform="translate(498.1 -120.9) scale(0.87)">
+        <circle cx="70" cy="70" r="62" fill="none" className="stroke-rec" strokeWidth={14} />
+        <g transform="translate(70 70) scale(0.66) translate(-70 -70)">
+          <g transform="translate(66 52) scale(0.5)" className="fill-rec">
+            <path d="M-83 -36.9L-11.84 -52.71A54 54 0 1 1 -47.14 26.57Z" />
+            <path d="M47.94 0.82L78.47 -19.6L41.93 -23.29Z" />
+          </g>
+          <path
+            d="M16 104C28 90 42 90 52 104C62 118 76 118 88 104C98 92 112 92 124 104"
+            fill="none"
+            className="stroke-rec"
+            strokeWidth={16}
+            strokeLinecap="round"
+          />
+        </g>
+      </g>
     </svg>
   );
 }

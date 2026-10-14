@@ -5,7 +5,7 @@ const W = 360;
 const H = 30;
 const BASE = 15;
 
-/** A past session's line, still and small: 相手 above in red, 自分 below in ink, dots on the baseline for screenshots. */
+/** A past session's line, still and small: 相手 above in 朱, 自分 below in ink, dots on the baseline for screenshots. */
 export function SessionLine({ shape, two, className = "" }: { shape: Shape; two: boolean; className?: string }) {
   const l = useMemo(() => mapLine(shape, W, 2, BASE, 10, 8, two), [shape, two]);
   return (

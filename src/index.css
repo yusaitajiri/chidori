@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 /*
- * White paper, black ink and one true red. Red is the voice you hear: 相手's line and name, the
- * start dot and 停止. 自分 is ink. Alerts are inverted (paper on ink), never red. Light and dark
- * follow Windows; text keeps 4.5:1 contrast. No glows, gradients or see-through blur.
+ * White paper, black ink and one 朱 (vermilion), Kikitori's colour in the Kudagitsune family. 朱 is
+ * the voice you hear: 相手's line and name, the start dot and 停止. 自分 is ink. Alerts are inverted
+ * (paper on ink), never 朱. Light and dark follow Windows; text keeps 4.5:1 contrast. No glows,
+ * gradients or see-through blur.
  */
 :root {
   color-scheme: light dark;
@@ -23,30 +24,30 @@
   --kk-accent-fg: #ffffff;
   --kk-accent-text: #121214;
   --kk-accent-soft: #f4f4f5;
-  --kk-rec: #d8232a;
-  --kk-rec-strong: #d8232a;
-  --kk-rec-hover: #bc1a21;
+  --kk-rec: #b0501f;
+  --kk-rec-strong: #b0501f;
+  --kk-rec-hover: #9a451a;
   --kk-rec-fg: #ffffff;
   /* Under the line: while recording, while paused, and the hint a finished session keeps. */
-  --kk-tint: #fcebec;
+  --kk-tint: #fbede4;
   --kk-tint-pause: #f1f1f2;
-  --kk-hint: #fcf7f7;
-  /* The start dot's two rings: the red, less saturated and lighter at each step out. */
-  --kk-ring-1: #e8868a;
-  --kk-ring-2: #f4c7c8;
+  --kk-hint: #fcf8f5;
+  /* The start dot's two rings: the 朱, less saturated and lighter at each step out. */
+  --kk-ring-1: #de9a79;
+  --kk-ring-2: #f1cdb9;
   --kk-alert: #121214;
   --kk-alert-fg: #ffffff;
-  --kk-others: #d8232a;
+  --kk-others: #b0501f;
   --kk-me: #121214;
   --kk-partial: #66666d;
   --kk-meter-bg: #e3e3e6;
-  /* Transcription far behind (FR-25): yellow, since red is the voice you hear. Dark enough on
+  /* Transcription far behind (FR-25): yellow, since 朱 is the voice you hear. Dark enough on
      white for small bold text (4.8:1). */
   --kk-lag: #946b00;
   --kk-shadow: 0 0% 0%;
   --kk-shadow-strength: 1;
   --kk-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* Project colours (FR-64): small squares only, muted, and never red. */
+  /* Project colours (FR-64): small squares only, muted, and never red or 朱. */
   --kk-p-slate: #7a7a84;
   --kk-p-blue: #3d6fd1;
   --kk-p-teal: #17867f;
@@ -72,19 +73,20 @@
     --kk-accent-fg: #19191b;
     --kk-accent-text: #ededef;
     --kk-accent-soft: #26262a;
-    /* A true red that still reads on near-black (5:1 for 相手's name). */
-    --kk-rec: #ff3b3f;
-    --kk-rec-strong: #d8232a;
-    --kk-rec-hover: #e5373d;
+    /* The brand's lighter dark-mode 朱 (8.5:1 for 相手's name); 停止 keeps the deep one so white
+       text on it still reads. */
+    --kk-rec: #eba57e;
+    --kk-rec-strong: #b0501f;
+    --kk-rec-hover: #9a451a;
     --kk-rec-fg: #ffffff;
-    --kk-tint: #2c1718;
+    --kk-tint: #2e1f17;
     --kk-tint-pause: #222224;
-    --kk-hint: #1d191a;
-    --kk-ring-1: #8c3236;
-    --kk-ring-2: #48262a;
+    --kk-hint: #1e1a18;
+    --kk-ring-1: #8e4f2f;
+    --kk-ring-2: #4a2e21;
     --kk-alert: #ededef;
     --kk-alert-fg: #19191b;
-    --kk-others: #ff3b3f;
+    --kk-others: #eba57e;
     --kk-me: #ededef;
     --kk-partial: #a2a2a9;
     --kk-meter-bg: #2c2c31;
@@ -123,7 +125,7 @@
   --color-tint: var(--kk-tint);
   --color-alert: var(--kk-alert);
   --color-alert-fg: var(--kk-alert-fg);
-  /* Levels of a notice speak through their icon and words, not through red. */
+  /* Levels of a notice speak through their icon and words, not through colour. */
   --color-warn: var(--kk-text);
   --color-err: var(--kk-text);
   --color-ok: var(--kk-text);
@@ -591,7 +593,7 @@
   stroke: var(--kk-border-strong);
 }
 
-/* An app's sound beside its name in the source picker: a small red line on its baseline, there only while it plays. */
+/* An app's sound beside its name in the source picker: a small 朱 line on its baseline, there only while it plays. */
 .kk-app-wave {
   opacity: 0;
   transition: opacity 0.3s ease;

@@ -68,7 +68,7 @@ function useFresh(id: string): boolean {
   return store((s) => !!s.fresh[id]);
 }
 
-/** A turn's first line: the speaker's name in the colour of their side of the line (相手 red, 自分 ink), then the time. */
+/** A turn's first line: the speaker's name in the colour of their side of the line (相手 朱, 自分 ink), then the time. */
 function TurnHead({ source, time, twoSpeakers }: { source: SourceId; time: string; twoSpeakers: boolean }) {
   const { t } = useTranslation();
   const me = source === "mic";

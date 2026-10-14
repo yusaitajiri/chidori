@@ -1,3 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="829.55" height="223.2" viewBox="-30.6 -204.6 829.55 223.2">
-<path d="M0 -174L0 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 -50L60 -108" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.6 -70.88L64 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M124 -108L124 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><circle cx="124" cy="-160.88" r="14.88" fill="#121214"/><path d="M194 -174L194 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M194 -50L254 -108" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M215.6 -70.88L258 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M318 -108L318 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><circle cx="318" cy="-160.88" r="14.88" fill="#121214"/><path d="M396 -146L396 -42A30 30 0 0 0 426 -12L432 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M368 -108L438 -108" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M476 -93.9L547.16 -109.71A54 54 0 1 1 511.86 -30.43Z" fill="#D8232A"/><path d="M606.94 -56.18L637.47 -76.6L600.93 -80.29Z" fill="#121214" stroke="#121214" stroke-width="2.54" stroke-linecap="round" stroke-linejoin="round"/><circle cx="581.56" cy="-75.36" r="5.4" fill="#FFFFFF"/><path d="M677.47 -108L677.47 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M677.47 -48C677.47 -90 693.47 -108 723.47 -108" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><path d="M765.47 -108L765.47 -12" fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/><circle cx="765.47" cy="-160.88" r="14.88" fill="#121214"/>
+<title>Kikitori</title>
+<defs>
+<mask id="mon" maskUnits="userSpaceOnUse" x="0" y="0" width="140" height="140">
+<rect width="140" height="140" fill="#000"/>
+<circle cx="70" cy="70" r="64" fill="none" stroke="#fff" stroke-width="9"/>
+<g transform="translate(70 70) scale(0.7) translate(-70 -70)">
+<g transform="translate(66 52) scale(0.5)">
+  <path d="M-83 -36.9L-11.84 -52.71A54 54 0 1 1 -47.14 26.57Z" fill="#fff"/>
+  <path d="M47.94 0.82L78.47 -19.6L41.93 -23.29Z" fill="#fff"/>
+  <circle cx="22.56" cy="-18.36" r="8" fill="#000"/>
+  <path d="M-34 6C-14 26 16 26 34 10" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>
+</g>
+<path d="M16 104C28 90 42 90 52 104C62 118 76 118 88 104C98 92 112 92 124 104" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+</g>
+</mask>
+</defs>
+<g fill="none" stroke="#121214" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+<path d="M0 -174L0 -12M0 -50L60 -108M21.6 -70.88L64 -12"/>
+<path d="M124 -108L124 -12"/>
+<path d="M194 -174L194 -12M194 -50L254 -108M215.6 -70.88L258 -12"/>
+<path d="M318 -108L318 -12"/>
+<path d="M396 -146L396 -42A30 30 0 0 0 426 -12L432 -12M368 -108L438 -108"/>
+<path d="M677.47 -108L677.47 -12M677.47 -48C677.47 -90 693.47 -108 723.47 -108"/>
+<path d="M765.47 -108L765.47 -12"/>
+</g>
+<g fill="#121214"><circle cx="124" cy="-160.88" r="14.88"/><circle cx="318" cy="-160.88" r="14.88"/><circle cx="765.47" cy="-160.88" r="14.88"/></g>
+<g transform="translate(494.1 -124.9) scale(0.93)"><rect width="140" height="140" fill="#B0501F" mask="url(#mon)"/></g>
 </svg>

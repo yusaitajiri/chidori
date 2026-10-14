@@ -12,7 +12,7 @@ use super::recovery::write_atomic;
 pub const PROJECTS_FILE: &str = "projects.json";
 
 /// The colours a project can have, by name; the UI draws each in a light and a dark shade. No
-/// red: red is the voice you hear.
+/// red: 朱, a red, is the voice you hear.
 pub const COLORS: [&str; 7] = ["slate", "blue", "teal", "green", "amber", "violet", "brown"];
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

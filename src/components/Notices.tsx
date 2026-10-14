@@ -5,7 +5,7 @@ import { useUi } from "../store/ui";
 
 /**
  * Banners at the top with one action button (section 5). They are inverted, paper on ink, so an
- * alert never borrows the red that means a voice.
+ * alert never borrows the 朱 that means a voice.
  */
 export function Banners() {
   const { t } = useTranslation();

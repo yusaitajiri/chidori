@@ -4,7 +4,7 @@ import { liveLine, type Geometry } from "../lib/line";
 import { advance, isQuiet, STEP_MS, WAVE_STEPS, watchApp } from "../store/appLevels";
 
 /**
- * An app's sound beside its name, while it plays: its last two seconds as a small red line on its
+ * An app's sound beside its name, while it plays: its last two seconds as a small 朱 line on its
  * baseline, the newest at the right end, from the app's own session meter. It steps ten times a
  * second instead of gliding every frame like the recording's line: redrawn at the screen's rate
  * it cost about 40% of a core on a 165 Hz screen, stepping about 4% (measured 2026-10-05). In

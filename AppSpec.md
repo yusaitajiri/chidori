@@ -81,7 +81,7 @@ items (section 19).
 | --- | --- | --- |
 | FR-01 | Recording | One button toggles Start/Stop; a global hotkey does too once the user sets one (none by default). |
 | FR-02 | Recording | Capture starts within 1 s of Start. If the model is still loading, audio is buffered, not lost. |
-| FR-03 | Recording | While recording: a red dot, elapsed time (without paused time), each source's level drawn as the live line, and the tray in its recording state. |
+| FR-03 | Recording | While recording: a 朱 dot, elapsed time (without paused time), each source's level drawn as the live line, and the tray in its recording state. |
 | FR-04 | Recording | On Stop, transcribe all queued audio with progress, then save the session. |
 | FR-05 | Recording | Pause and resume, with markers in the timeline. |
 | FR-06 | Recording | A cut button starts a new part of the session (a new topic or scene), recorded as a `cut` marker; exports head each part with its time. |
@@ -133,11 +133,11 @@ items (section 19).
 
 One small window: compact (380 × 170) for sitting beside a call, expanded (420 × 640, resizable)
 for the transcript, History and Settings. The look is "one dot, one line": white paper, ink, and
-one red that means the voice you hear. `docs/DECISIONS.md` → UI explains every part of it and is
+one 朱 (vermilion, Kikitori's colour in the Kudagitsune family) that means the voice you hear. `docs/DECISIONS.md` → UI explains every part of it and is
 the reference for UI changes.
 
 - **Places.** Expanded: 録音 · 履歴 · 設定 in the title bar. The recording place has three phases:
-  the start screen (the red dot with 開始, the source picker), the recording (a header that stays
+  the start screen (the 朱 dot with 開始, the source picker), the recording (a header that stays
   in place with the title and the source, the transcript, the live line) and the finished
   session (header, transcript, the session's line, copy and export). The recording's title
   renames on a click; its source is a dropdown, where a pick switches the source (FR-17). The
@@ -145,7 +145,7 @@ the reference for UI changes.
 - **Rare actions** (Markdown copy, Agent用, exports, history, settings) sit in the … menu, a
   native popup so it fits the compact window.
 - **Errors** are a banner at the top with one action, e.g. 「マイクへのアクセスがオフです [設定を開く]」
-  opening `ms-settings:privacy-microphone`. Banners are inverted (paper on ink), so red never
+  opening `ms-settings:privacy-microphone`. Banners are inverted (paper on ink), so 朱 never
   means an error.
 - **Screenshot confirmation** is a toast; with the window hidden, a silent Windows notification.
 - **Light and dark** follow Windows; motion honours `prefers-reduced-motion`. Every icon button
@@ -158,8 +158,8 @@ the reference for UI changes.
 leaving `recording`; a source that fails shows an error banner while the others carry on; a
 full disk stops the recording and saves what exists.
 
-**Tray.** The red bird alone when idle, with red ripples while recording and grey ones while
-paused or finishing. Left-click shows or hides the window.
+**Tray.** The app's mon on its paper disc when idle, the disc turned 朱 while recording, and the
+mon in grey while paused or finishing. Left-click shows or hides the window.
 
 **Hotkeys** are off until set in 設定 › ショートカット. When idle, the start hotkey starts with the
 last-used source; the screenshot, important-mark and cut hotkeys show 「録音中のみ使えます」.
@@ -447,7 +447,7 @@ name; nothing is written into the session folder.
 - **PDF (FR-53):** the session becomes a Typst document (`export/transcript.typ` preamble, then
   one call per block with all session text in string literals so it is never read as markup),
   compiled in process with the `typst` crate. A4, 18 mm margins, Yu Gothic (Meiryo, then MS
-  Gothic), 相手 in red, screenshots full width as JPEG ≤ 1600 px, and the app's name and red bird
+  Gothic), 相手 in 朱, screenshots full width as JPEG ≤ 1600 px, and the app's name and mon
   in the footer. It opens when saved. If Typst fails, the print HTML is saved instead and opened
   in the browser with 「ブラウザの印刷からPDFに保存してください」.
 - **Typst:** the same document as a `.typ` file, with its screenshots in `<name>_images/`, so
