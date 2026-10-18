@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Kikitori",
+  "productName": "Chidori",
   "version": "0.3.0",
-  "identifier": "dev.yusai.kikitori",
+  "identifier": "dev.yusai.chidori",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Kikitori",
+        "title": "Chidori",
         "width": 380,
         "height": 170,
         "minWidth": 340,
@@ -49,6 +49,7 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
+        "installerHooks": "./windows/hooks.nsh",
         "languages": [
           "Japanese",
           "English"
@@ -69,7 +70,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk5RUFERDhCMkVBNDUyQ0EKUldUS1VxUXVpOTNxbWV0UmJjdUp1ZENKUk1naDlySGxXNGRUekhQL0IzV04vc0dFamc3SkFNZGYK",
       "endpoints": [
-        "https://github.com/yusaitajiri/kikitori/releases/latest/download/latest.json"
+        "https://github.com/yusaitajiri/chidori/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

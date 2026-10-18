@@ -11,12 +11,12 @@ jobs:
     timeout-minutes: 90
     env:
       GGML_NATIVE: "OFF"
-      KIKITORI_TEST_CPU: "1"
-      KIKITORI_REQUIRE_FIXTURES: "1"
+      CHIDORI_TEST_CPU: "1"
+      CHIDORI_REQUIRE_FIXTURES: "1"
       # base-q5 loses more accuracy than turbo-q5 when cut into utterances (about 4 points
       # here). The section 18 three-point rule is checked with turbo-q5 on the reference GPU
       # machine; this run guards against regressions.
-      KIKITORI_CER_MARGIN: "0.06"
+      CHIDORI_CER_MARGIN: "0.06"
     steps:
       - run: git config --global core.longpaths true
       - uses: actions/checkout@v7.0.1
@@ -51,5 +51,5 @@ jobs:
       - name: Integration tests (CPU)
         working-directory: src-tauri
         env:
-          KIKITORI_TEST_MODEL: ${{ runner.temp }}/models/ggml-base-q5_1.bin
+          CHIDORI_TEST_MODEL: ${{ runner.temp }}/models/ggml-base-q5_1.bin
         run: cargo test --release --test pipeline -- --ignored --nocapture --test-threads 1

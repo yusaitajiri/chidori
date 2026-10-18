@@ -33,7 +33,7 @@ export function ColorChoice({ value, onChange }: { value: string; onChange: (c: 
           aria-label={t(colorKey(c))}
           title={t(colorKey(c))}
           onClick={() => onChange(c)}
-          className={`grid size-7 place-items-center rounded-[8px] border transition-colors ${value === c ? "border-fg" : "border-transparent hover:border-line-strong"}`}
+          className={`grid size-7 place-items-center rounded-md border transition-colors ${value === c ? "border-fg" : "border-transparent hover:border-line-strong"}`}
         >
           <ProjectMark color={c} size={16} className="!rounded-[4px]" />
         </button>
@@ -116,15 +116,15 @@ export function ProjectButton({ sessionId, project, bare = false }: { sessionId:
 
   if (bare) {
     return (
-      <button type="button" aria-haspopup="menu" aria-label={label} title={label} onClick={() => menu([sessionId], project)} className="grid size-7 shrink-0 place-items-center rounded-lg transition-colors hover:bg-surface-2">
+      <button type="button" aria-haspopup="menu" aria-label={label} title={label} onClick={() => menu([sessionId], project)} className="grid size-7 shrink-0 place-items-center rounded-md transition-colors hover:bg-surface-2">
         <ProjectMark color={p?.color} size={11} />
       </button>
     );
   }
   return (
-    <button type="button" aria-haspopup="menu" aria-label={label} onClick={() => menu([sessionId], project)} className="-mx-1 inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-[12px] transition-colors hover:bg-surface-2">
+    <button type="button" aria-haspopup="menu" aria-label={label} onClick={() => menu([sessionId], project)} className="-mx-1 inline-flex max-w-full items-center gap-1.5 rounded-sm px-1 py-0.5 text-[12px] transition-colors hover:bg-surface-2">
       <ProjectMark color={p?.color} />
-      <span className={`min-w-0 truncate ${p ? "font-semibold text-fg" : "text-muted"}`}>{p ? p.name : t("noProject")}</span>
+      <span className={`min-w-0 truncate ${p ? "font-medium text-fg" : "text-muted"}`}>{p ? p.name : t("noProject")}</span>
       <ChevronDown size={12} className="shrink-0 text-muted" />
     </button>
   );
@@ -146,7 +146,7 @@ export function ProjectsSettings() {
 
   return (
     <>
-      <section className="rounded-2xl border border-line bg-surface px-1.5 py-1">
+      <section className="rounded-lg border border-line bg-surface px-1.5 py-1">
         {projects.length === 0 && <p className="px-2 py-3 text-center text-[12.5px] text-muted">{t("projectsEmpty")}</p>}
         <ul className="divide-y divide-line">
           {projects.map((p) => (
@@ -158,10 +158,10 @@ export function ProjectsSettings() {
                   setName(p.name);
                   setOpen(open === p.id ? null : p.id);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-surface-2"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-surface-2"
               >
                 <ProjectMark color={p.color} size={12} />
-                <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{p.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{p.name}</span>
                 <ChevronDown size={14} className={`shrink-0 text-muted transition-transform duration-200 ${open === p.id ? "rotate-180" : ""}`} />
               </button>
               {open === p.id && (

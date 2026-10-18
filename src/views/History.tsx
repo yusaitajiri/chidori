@@ -27,7 +27,7 @@ const isEmptySession = (s: Pick<SessionSummary, "segments" | "durationMs">) => s
 /** A row's checkbox in selection mode: a rounded square, ticked in ink. */
 function Tick({ on }: { on: boolean }) {
   return (
-    <span aria-hidden className={`grid size-[18px] shrink-0 place-items-center rounded-[5px] border-[1.5px] transition-colors duration-150 ${on ? "border-fg bg-fg text-bg" : "border-line-strong bg-surface"}`}>
+    <span aria-hidden className={`grid size-[18px] shrink-0 place-items-center rounded-sm border-[1.5px] transition-colors duration-150 ${on ? "border-fg bg-fg text-bg" : "border-line-strong bg-surface"}`}>
       {on && <Check size={12} strokeWidth={3.2} />}
     </span>
   );
@@ -47,7 +47,7 @@ function Row({ s, onMenu, selecting, checked, onToggle }: { s: SessionSummary; o
         role={selecting ? "checkbox" : undefined}
         aria-checked={selecting ? checked : undefined}
         onClick={() => (selecting ? onToggle() : go("session", { sessionId: s.id }))}
-        className={`flex w-full items-center gap-3 rounded-xl px-2 pt-2.5 pb-2 text-left transition-colors hover:bg-surface-2 ${checked ? "bg-surface-2" : ""} ${empty ? "text-muted" : ""}`}
+        className={`flex w-full items-center gap-3 rounded-lg px-2 pt-2.5 pb-2 text-left transition-colors hover:bg-surface-2 ${checked ? "bg-surface-2" : ""} ${empty ? "text-muted" : ""}`}
       >
         {selecting && <Tick on={checked} />}
         <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-2.5">
@@ -58,8 +58,8 @@ function Row({ s, onMenu, selecting, checked, onToggle }: { s: SessionSummary; o
                 <span className="sr-only">{project.name}</span>
               </span>
             )}
-            <span className={`min-w-0 truncate text-[13.5px] ${empty ? "font-medium" : "font-semibold"}`}>{s.title}</span>
-            {s.recoverable && <span className="shrink-0 rounded-[5px] bg-alert px-1.5 text-[10.5px] font-bold text-alert-fg">{t("needsRecovery")}</span>}
+            <span className={`min-w-0 truncate text-[13.5px] ${empty ? "" : "font-medium"}`}>{s.title}</span>
+            {s.recoverable && <span className="shrink-0 rounded-sm bg-warning-tint px-1.5 text-[10.5px] font-medium text-warning">{t("needsRecovery")}</span>}
           </span>
           <span className={`num text-[11.5px] text-muted transition-opacity ${selecting ? "" : "group-focus-within:opacity-0 group-hover:opacity-0"}`}>{timeOf(s.startedAt)}</span>
           {shape && !empty && <SessionLine shape={shape} two={two} className="col-span-2 mt-1.5 mb-1" />}
@@ -281,7 +281,7 @@ export function History() {
               type="search"
               aria-label={t("searchHistory")}
               placeholder={t("searchHistory")}
-              className={`${inputClass} !h-[38px] !rounded-[11px] pr-8 pl-9 placeholder:text-muted [&::-webkit-search-cancel-button]:hidden`}
+              className={`${inputClass} !h-[38px] !rounded-md pr-8 pl-9 placeholder:text-muted [&::-webkit-search-cancel-button]:hidden`}
               value={query}
               autoFocus
               onChange={(e) => setQuery(e.target.value)}
@@ -299,7 +299,7 @@ export function History() {
               aria-haspopup="menu"
               aria-label={`${t("project")}: ${filtered?.name ?? (filter.kind === "none" ? t("noProject") : t("allProjects"))}`}
               onClick={filterMenu}
-              className={`flex h-[38px] max-w-[140px] shrink-0 items-center gap-1.5 rounded-[11px] border px-2.5 text-[12.5px] transition-colors hover:border-line-strong ${filter.kind === "all" ? "border-line text-muted" : "border-fg font-semibold"}`}
+              className={`flex h-[38px] max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-[12.5px] transition-colors hover:border-line-strong ${filter.kind === "all" ? "border-line text-muted" : "border-fg font-medium"}`}
             >
               {filter.kind !== "all" && <ProjectMark color={filtered?.color} />}
               <span className="min-w-0 truncate">{filtered?.name ?? (filter.kind === "none" ? t("noProject") : t("project"))}</span>
@@ -324,7 +324,7 @@ export function History() {
         {sessions === null ? (
           <div className="space-y-2 px-1 pt-3" aria-label={t("loading")}>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-[86px] animate-pulse rounded-xl bg-surface-2" style={{ animationDelay: `${i * 120}ms` }} />
+              <div key={i} className="h-[86px] animate-pulse rounded-lg bg-surface-2" style={{ animationDelay: `${i * 120}ms` }} />
             ))}
           </div>
         ) : sessions.length === 0 ? (
@@ -340,8 +340,8 @@ export function History() {
             return (
               <section key={day}>
                 <h3 className="sticky top-0 z-10 flex items-baseline gap-2 bg-bg px-2 pt-3.5 pb-1 text-[12px]">
-                  {label.name && <b className="font-bold">{label.name}</b>}
-                  <span className={label.name ? "text-muted" : "font-bold"}>{label.date}</span>
+                  {label.name && <b className="font-medium">{label.name}</b>}
+                  <span className={label.name ? "text-muted" : "font-medium"}>{label.date}</span>
                 </h3>
                 <ul className="space-y-0.5">
                   {items.map((s) => (

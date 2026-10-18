@@ -105,13 +105,13 @@ export function SetupWizard() {
             {visible.map((m) => (
               <label
                 key={m.id}
-                className={`flex cursor-pointer gap-2.5 rounded-2xl border p-3 transition-[background-color,border-color] duration-200 ${selectedId === m.id ? "border-fg" : "border-line bg-surface hover:border-line-strong"}`}
+                className={`flex cursor-pointer gap-2.5 rounded-lg border p-3 transition-[background-color,border-color] duration-200 ${selectedId === m.id ? "border-fg" : "border-line bg-surface hover:border-line-strong"}`}
               >
                 <input type="radio" name="model" className="mt-1 accent-[var(--kk-accent)]" checked={selectedId === m.id} onChange={() => setChoice(m.id)} />
                 <span className="min-w-0">
-                  <span className="flex items-center gap-1.5 font-semibold">
+                  <span className="flex items-center gap-1.5 font-medium">
                     {name(m)}
-                    {m.recommended && <span className="rounded-[5px] bg-fg px-1.5 text-[10.5px] font-bold text-bg">{t("recommended")}</span>}
+                    {m.recommended && <span className="rounded-sm bg-fg px-1.5 text-[10.5px] font-medium text-bg">{t("recommended")}</span>}
                   </span>
                   <span className="block text-xs text-muted">
                     {desc(m)} · {bytes(m.sizeBytes)}
@@ -125,7 +125,7 @@ export function SetupWizard() {
 
         {STEPS[step] === "wizardDownload" && model && (
           <div className="space-y-3">
-            <div className="font-semibold">
+            <div className="font-medium">
               {name(model)} · {bytes(model.sizeBytes)}
             </div>
             {!model.installed && (
@@ -191,7 +191,7 @@ export function SetupWizard() {
               <MicWave dbfs={testing ? micLevel : undefined} active={testing} label={t("me")} />
             </div>
             {mic && (
-              <div className="animate-fade-up rounded-2xl border border-line bg-surface p-3 text-[13px]">
+              <div className="animate-fade-up rounded-lg border border-line bg-surface p-3 text-[13px]">
                 {mic.device && <div className="mb-1 text-xs text-muted">{mic.device}</div>}
                 {mic.text ? (
                   <>

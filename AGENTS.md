@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Kikitori is a Windows desktop app that transcribes live audio (one app, the whole system, or the
+Chidori is a Windows desktop app that transcribes live audio (one app, the whole system, or the
 mic) with local Whisper, drops screenshots into the transcript where they were taken, and exports
 Markdown, PDF and Typst. Tauri 2 + React + TypeScript in `src/`, Rust in `src-tauri/`, whisper.cpp
 through `whisper-rs`, WASAPI capture.
@@ -12,8 +12,11 @@ through `whisper-rs`, WASAPI capture.
 - `docs/DECISIONS.md` holds every choice the spec leaves open and every deviation from it. Where
   the spec is silent, pick the simplest option that keeps the UI one-tap simple and add a line
   there. When you change something the spec defines, update the spec section too.
-- The look (white paper, ink, one red; "one dot, one line") is deliberate. Read
-  `docs/DECISIONS.md` → UI before changing the UI.
+- The look is the kamon brand, from `@yusai/kamon-react` (the `kamon-brand` repository, pinned to
+  a `react-v…` tag): a warm grey ground, ink, and Chidori's one colour, 朱. For any UI work, use
+  the brand-ui skill: it has the kamon brand rules for this app. Other agents read
+  `.claude/skills/brand-ui/SKILL.md` (copied by `brand-sync` on install). Read
+  `docs/DECISIONS.md` → UI for how the app applies it.
 
 ## Commands
 

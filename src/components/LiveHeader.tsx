@@ -33,7 +33,7 @@ function LiveTitle() {
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <input
           aria-label={t("newTitle")}
-          className={`${inputClass} !h-9 min-w-0 flex-1 !text-[15px] font-bold`}
+          className={`${inputClass} !h-9 min-w-0 flex-1 !text-[15px] font-medium`}
           value={draft}
           autoFocus
           onChange={(e) => setDraft(e.target.value)}
@@ -43,7 +43,7 @@ function LiveTitle() {
             if (e.key === "Escape") setEditing(false);
           }}
         />
-        <button type="button" aria-label={t("save")} className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent text-accent-fg" onMouseDown={(e) => e.preventDefault()} onClick={rename}>
+        <button type="button" aria-label={t("save")} className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-fg" onMouseDown={(e) => e.preventDefault()} onClick={rename}>
           <Check size={15} />
         </button>
       </div>
@@ -57,9 +57,9 @@ function LiveTitle() {
         setDraft(title ?? "");
         setEditing(true);
       }}
-      className="group -mx-1.5 flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-surface-2"
+      className="group -mx-1.5 flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-surface-2"
     >
-      <h2 className="min-w-0 truncate text-[15px] leading-snug font-bold">{title}</h2>
+      <h2 className="min-w-0 truncate text-[15px] leading-snug font-medium">{title}</h2>
       <Pencil size={13} className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100" />
     </button>
   );

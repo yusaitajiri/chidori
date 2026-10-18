@@ -702,6 +702,61 @@ dependencies = [
 ]
 
 [[package]]
+name = "chidori"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "audioadapter-buffers",
+ "base64 0.23.1",
+ "chrono",
+ "crossbeam-channel",
+ "earshot",
+ "futures-util",
+ "hound",
+ "image",
+ "insta",
+ "log",
+ "ogg",
+ "opusic-c",
+ "parking_lot",
+ "reqwest",
+ "rubato",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-store",
+ "tauri-plugin-updater",
+ "tauri-plugin-window-state",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "trash",
+ "typst",
+ "typst-layout",
+ "typst-pdf",
+ "ulid",
+ "unicode-normalization",
+ "wasapi",
+ "whisper-rs",
+ "windows",
+ "xcap",
+ "zip 8.6.0",
+]
+
+[[package]]
 name = "chinese-number"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3248,61 +3303,6 @@ name = "khronos_api"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
-
-[[package]]
-name = "kikitori"
-version = "0.3.0"
-dependencies = [
- "anyhow",
- "audioadapter-buffers",
- "base64 0.23.1",
- "chrono",
- "crossbeam-channel",
- "earshot",
- "futures-util",
- "hound",
- "image",
- "insta",
- "log",
- "ogg",
- "opusic-c",
- "parking_lot",
- "reqwest",
- "rubato",
- "rustls",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-single-instance",
- "tauri-plugin-store",
- "tauri-plugin-updater",
- "tauri-plugin-window-state",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "trash",
- "typst",
- "typst-layout",
- "typst-pdf",
- "ulid",
- "unicode-normalization",
- "wasapi",
- "whisper-rs",
- "windows",
- "xcap",
- "zip 8.6.0",
-]
 
 [[package]]
 name = "krilla"

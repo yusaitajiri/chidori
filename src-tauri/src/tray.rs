@@ -1,5 +1,5 @@
-//! Tray icon (FR-90). The app icon's bird, alone when idle, with its red ripples while recording
-//! and grey ones while paused or finishing.
+//! Tray icon (FR-90). The app icon in ink while idle, paused or finishing, and in its 朱 while
+//! recording.
 
 use tauri::image::Image;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
@@ -10,7 +10,7 @@ use crate::events::UiState;
 use crate::settings::Locale;
 use crate::state::AppState;
 
-pub const TRAY_ID: &str = "kikitori-tray";
+pub const TRAY_ID: &str = "chidori-tray";
 
 struct Labels {
     start: &'static str,
@@ -31,9 +31,9 @@ fn labels(locale: Locale) -> Labels {
             shot: "スクショ",
             show: "ウィンドウを表示",
             quit: "終了",
-            idle_tip: "Kikitori",
-            rec_tip: "Kikitori — 録音中",
-            finishing_tip: "Kikitori — 仕上げ中…",
+            idle_tip: "Chidori",
+            rec_tip: "Chidori — 録音中",
+            finishing_tip: "Chidori — 仕上げ中…",
         },
         Locale::En => Labels {
             start: "Start",
@@ -41,23 +41,23 @@ fn labels(locale: Locale) -> Labels {
             shot: "Screenshot",
             show: "Show window",
             quit: "Quit",
-            idle_tip: "Kikitori",
-            rec_tip: "Kikitori — recording",
-            finishing_tip: "Kikitori — finishing…",
+            idle_tip: "Chidori",
+            rec_tip: "Chidori — recording",
+            finishing_tip: "Chidori — finishing…",
         },
     }
 }
 
-// 32 px renders of icons/tray/*.svg; the bird stays put, so starting a recording only adds ripples.
+// 32 px renders of icons/tray/*.svg: the kit's small app icon, its frame filled with paper so it
+// reads on light and dark taskbars. recording.svg is the kit's icons/chidori/icon-small.svg as it
+// is; idle.svg is the same drawing in ink, the brand's one-colour form.
 const TRAY_IDLE: Image<'_> = include_image!("./icons/tray/idle.png");
 const TRAY_RECORDING: Image<'_> = include_image!("./icons/tray/recording.png");
-const TRAY_PAUSED: Image<'_> = include_image!("./icons/tray/paused.png");
 
-/// The tray picture for a state: the ripples are the sound the bird is hearing.
+/// The tray picture for a state: the plover takes its colour only while it is listening.
 fn icon_for(state: UiState) -> Image<'static> {
     match state {
         UiState::Recording => TRAY_RECORDING,
-        UiState::Paused | UiState::Finishing => TRAY_PAUSED,
         _ => TRAY_IDLE,
     }
 }
@@ -76,7 +76,7 @@ fn build_menu(app: &AppHandle, recording: bool) -> tauri::Result<Menu<tauri::Wry
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
     let menu = build_menu(app, false)?;
     let mut builder = TrayIconBuilder::with_id(TRAY_ID)
-        .tooltip("Kikitori")
+        .tooltip("Chidori")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {

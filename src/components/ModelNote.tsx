@@ -24,10 +24,10 @@ export function ModelNote({ className = "" }: { className?: string }) {
     .join("\n");
   const body = (
     <>
-      <span className="font-semibold text-fg">{name.short}</span>
+      <span className="font-medium text-fg">{name.short}</span>
       {device && <span>· {device}</span>}
       {loading && <Spinner size={11} />}
-      {failed && <span className="font-bold text-fg">· {t("modelFailed")}</span>}
+      {failed && <span className="font-medium text-fg">· {t("modelFailed")}</span>}
     </>
   );
   const base = `inline-flex min-w-0 items-center gap-1 text-[11px] whitespace-nowrap text-muted ${className}`;
@@ -44,7 +44,7 @@ export function ModelNote({ className = "" }: { className?: string }) {
       title={tooltip}
       aria-label={`${t("changeModel")}: ${name.full}`}
       onClick={() => go("settings", { tab: "models" })}
-      className={`${base} rounded-md transition-colors hover:text-fg`}
+      className={`${base} rounded-sm transition-colors hover:text-fg`}
     >
       {body}
     </button>

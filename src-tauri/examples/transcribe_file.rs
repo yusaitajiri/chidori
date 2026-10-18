@@ -5,9 +5,9 @@
 
 use std::time::Instant;
 
-use kikitori_lib::asr::engine::Engine;
-use kikitori_lib::asr::params::{self, DecodeOptions};
-use kikitori_lib::audio::file_source::read_wav;
+use chidori_lib::asr::engine::Engine;
+use chidori_lib::asr::params::{self, DecodeOptions};
+use chidori_lib::audio::file_source::read_wav;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();

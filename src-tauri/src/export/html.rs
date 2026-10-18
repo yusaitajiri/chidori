@@ -20,36 +20,39 @@ pub fn escape(text: &str) -> String {
     out
 }
 
+// The kamon brand's light colours (tokens/tokens.json in @yusai/kamon-react) on the paper itself:
+// ink, and Chidori's 朱 for the voice you hear (相手). Under the header, 子持ち罫.
 const STYLE: &str = r#"
 @page {
   size: A4 portrait;
   margin: 18mm;
-  @bottom-center { content: counter(page) " / " counter(pages); font-size: 8.5pt; color: #666; }
+  @bottom-center { content: counter(page) " / " counter(pages); font-size: 8.5pt; color: #5E5A53; }
 }
 html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body {
   font-family: "Yu Gothic UI", "Meiryo", sans-serif;
   font-size: 10.5pt;
   line-height: 1.75;
-  color: #111;
+  color: #2A2826;
   margin: 0;
   overflow-wrap: anywhere;
 }
-header { border-bottom: 1.5pt solid #222; padding-bottom: 6pt; margin-bottom: 12pt; }
+header { margin-bottom: 12pt; }
+header::after { content: ""; display: block; margin-top: 6pt; height: 1.2pt; border-top: 1.2pt solid #C2BDB2; border-bottom: 0.6pt solid #C2BDB2; }
 h1 { font-size: 17pt; margin: 0 0 4pt; line-height: 1.3; }
-.meta { color: #555; font-size: 9pt; }
+.meta { color: #5E5A53; font-size: 9pt; }
 p { margin: 0 0 7pt; }
-.time { color: #666; font-variant-numeric: tabular-nums; margin-right: 0.4em; }
+.time { color: #5E5A53; font-variant-numeric: tabular-nums; margin-right: 0.4em; }
 .label { font-weight: 700; margin-right: 0.4em; }
 .important { font-weight: 700; }
 .important::before { content: "★"; margin-right: 0.4em; }
-.label.me { color: #1b5e20; }
-.label.others { color: #0d47a1; }
+.label.me { color: #2A2826; }
+.label.others { color: #B0501F; }
 figure { margin: 8pt 0 10pt; break-inside: avoid; page-break-inside: avoid; }
-figure img { display: block; max-width: 100%; height: auto; border: 0.5pt solid #ccc; }
-figcaption { color: #555; font-size: 9pt; margin-top: 3pt; }
-.marker { color: #666; font-style: italic; text-align: center; margin: 6pt 0; }
-h2.cut { font-size: 9.5pt; color: #666; font-variant-numeric: tabular-nums; border-bottom: 0.5pt solid #ccc; padding-bottom: 2pt; margin: 16pt 0 8pt; break-after: avoid; page-break-after: avoid; }
+figure img { display: block; max-width: 100%; height: auto; border: 0.5pt solid #DCD8CF; }
+figcaption { color: #5E5A53; font-size: 9pt; margin-top: 3pt; }
+.marker { color: #5E5A53; font-style: italic; text-align: center; margin: 6pt 0; }
+h2.cut { font-size: 9.5pt; color: #5E5A53; font-variant-numeric: tabular-nums; border-bottom: 0.5pt solid #DCD8CF; padding-bottom: 2pt; margin: 16pt 0 8pt; break-after: avoid; page-break-after: avoid; }
 "#;
 
 pub fn render(session: &Session, opts: &ExportOptions) -> String {

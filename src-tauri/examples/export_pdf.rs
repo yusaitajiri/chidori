@@ -5,8 +5,8 @@
 use std::path::Path;
 use std::time::Instant;
 
-use kikitori_lib::export::{ExportOptions, saving, typst_pdf};
-use kikitori_lib::session::recovery;
+use chidori_lib::export::{ExportOptions, saving, typst_pdf};
+use chidori_lib::session::recovery;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();

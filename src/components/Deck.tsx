@@ -8,7 +8,7 @@ import type { SourceId, WindowInfo } from "../ipc/types";
 import { addCut, continueRecording, copy, exportAs, markCurrentLine, newRecording, openFolder, pauseOrResume, reportError, takeScreenshot, toggleRecording } from "../lib/actions";
 import { sessionClock, timerText } from "../lib/format";
 import { animate, reducedMotion, stopAnimating, type Animated } from "../lib/frameLoop";
-import { blobPath, liveLine, mapLine, sessionShape, type Shape } from "../lib/line";
+import { liveLine, mapLine, sessionShape, type Shape } from "../lib/line";
 import { menuText, popupMenu, type MenuEntry } from "../lib/popupMenu";
 import { lineHistory } from "../store/line";
 import { useRecording } from "../store/recording";
@@ -29,24 +29,23 @@ export const LINE_Y = 30;
 
 /**
  * In px: the deck's height while recording; the baseline then and, in the compact window, before
- * (the expanded window centres its start dot in the free space instead, on two wavy rings and
- * with no line until it starts); how far each side reaches; one step's width; where the pen starts
- * (in line with the buttons under it) and where it stops; where the compact start dot waits; the
- * start dot's, its rings' and the pen's radius; the whole session's height. The line runs from
- * edge to edge. Last, how many times a second the line may be drawn: the compact window, which
- * stays on screen through whole meetings, half as often.
+ * (the expanded window centres 開始 in the free space instead, with no line until it starts); how
+ * far each side reaches; one step's width; where the pen starts (in line with the buttons under
+ * it) and where it stops; where the compact 開始 sits on its empty line; the pen's radius; the
+ * whole session's height. The line runs from edge to edge. Last, how many times a second the line
+ * may be drawn: the compact window, which stays on screen through whole meetings, half as often.
  */
 const SIZES = {
-  expanded: { height: 124, base: LINE_Y, startBase: 30, centred: true, up: 20, down: 15, step: 1.6, startX: 14, endPad: 44, dotX: 14, dot: 36, rings: [48, 61], pen: 4.5, mapAmp: 0.62, fps: 60 },
-  compact: { height: 66, base: 12, startBase: 30, centred: false, up: 10, down: 8, step: 1.4, startX: 12, endPad: 34, dotX: 28, dot: 11, rings: [0, 0], pen: 3.5, mapAmp: 0.75, fps: 30 },
+  expanded: { height: 124, base: LINE_Y, startBase: 30, centred: true, up: 20, down: 15, step: 1.6, startX: 14, endPad: 44, dotX: 14, pen: 4.5, mapAmp: 0.62, fps: 60 },
+  compact: { height: 66, base: 12, startBase: 30, centred: false, up: 10, down: 8, step: 1.4, startX: 12, endPad: 34, dotX: 12, pen: 3.5, mapAmp: 0.75, fps: 30 },
 } as const;
 type Size = (typeof SIZES)[keyof typeof SIZES];
 
 /**
- * Where the expanded start dot rests, as a share of the deck's height above the model's line at
- * the bottom (`START_FOOT` px): a little above the middle, at the optical centre, because a shape
- * at the exact middle looks low. The CSS for the dot's target and the hint under it uses the same
- * numbers (`--kk-rest`).
+ * Where the expanded 開始 rests, as a share of the deck's height above the model's line at the
+ * bottom (`START_FOOT` px): a little above the middle, at the optical centre, because a shape at
+ * the exact middle looks low. The CSS for 開始 and the hint under it uses the same numbers
+ * (`--kk-rest`).
  */
 const START_FOOT = 30;
 const START_LIFT = 0.45;
@@ -59,8 +58,6 @@ type Els = {
   tint: SVGPathElement;
   restLead: SVGLineElement;
   rest: SVGLineElement;
-  ring2: SVGPathElement;
-  ring1: SVGPathElement;
   live: SVGGElement;
   fill: SVGPathElement;
   lead: SVGLineElement;
@@ -76,7 +73,6 @@ type Els = {
   mapO: SVGPathElement;
   mapTicks: SVGGElement;
   pen: SVGCircleElement;
-  label: SVGTextElement;
 };
 
 function build(svg: SVGSVGElement): Els {
@@ -90,16 +86,12 @@ function build(svg: SVGSVGElement): Els {
   const tint = el("path", "kk-line-tint");
   const restLead = el("line", "kk-line-ahead");
   const rest = el("line", "kk-line-ahead");
-  const ring2 = el("path", "kk-ring-2");
-  const ring1 = el("path", "kk-ring-1");
   const live = el("g", "");
   const map = el("g", "");
   const els = {
     tint,
     restLead,
     rest,
-    ring2,
-    ring1,
     live,
     fill: el("path", "kk-line-tint", live),
     lead: el("line", "kk-line-ahead", live),
@@ -115,10 +107,7 @@ function build(svg: SVGSVGElement): Els {
     mapO: el("path", "kk-line-o", map),
     mapTicks: el("g", "", map),
     pen: el("circle", "kk-line-pen"),
-    label: el("text", "kk-line-label"),
   };
-  els.label.setAttribute("text-anchor", "middle");
-  els.label.setAttribute("dominant-baseline", "central");
   return els;
 }
 
@@ -152,17 +141,14 @@ function setLines(g: SVGGElement, cls: string, lines: Seg[]) {
 
 type Tween = { t: number; ms: number; set: (p: number) => void; done?: () => void };
 
-/** Draws the line: the start dot on an empty line, the pen drawing the levels, or a whole session. */
+/** Draws the line: empty before a recording, the pen drawing the levels, or a whole session. */
 class DeckLine implements Animated {
   mode: "dot" | "live" | "map" = "dot";
-  dotR: number;
+  /** The pen's radius as it comes in with the line (0 while 開始 waits). */
+  dotR = 0;
   penR: number;
-  /** 0 the line and dot as they wait before a recording … 1 where they are while recording. */
+  /** 0 the line as it waits before a recording … 1 where it is while recording. */
   move = 0;
-  /** The pointer on the start dot, 0..1: it swells a little and its rings stir. */
-  lift = 0;
-  /** How far the rings have stirred (seconds of stirring). */
-  private stir = 0;
   /** 0 the live line … 1 the whole session: the zoom out when a session is saved. */
   k = 0;
   /** The whole session's heights: 1 at rest, 0 flat (on its way back to the dot). */
@@ -182,7 +168,6 @@ class DeckLine implements Animated {
     this.svg = svg;
     this.els = els;
     this.size = size;
-    this.dotR = size.dot;
     this.penR = size.pen;
     this.fps = size.fps;
   }
@@ -204,13 +189,7 @@ class DeckLine implements Animated {
     stopAnimating(this);
   }
 
-  setLabel(text: string) {
-    this.els.label.textContent = text;
-    this.draw();
-  }
-
   frame(dt: number): boolean {
-    if (this.mode === "dot" && this.lift > 0 && !reducedMotion()) this.stir += dt * this.lift;
     for (const tw of [...this.tweens]) {
       tw.t += dt * 1000;
       const p = Math.min(1, tw.t / tw.ms);
@@ -221,7 +200,7 @@ class DeckLine implements Animated {
       }
     }
     this.draw();
-    return this.tweens.length > 0 || (this.mode === "live" && this.recording) || (this.mode === "dot" && this.lift > 0.001);
+    return this.tweens.length > 0 || (this.mode === "live" && this.recording);
   }
 
   draw() {
@@ -230,43 +209,27 @@ class DeckLine implements Animated {
     if (!w) return;
     const s = this.size;
     const e = this.els;
-    // Before a recording the expanded window holds its dot in the middle of the free space, with
-    // no line yet; recording, the line lies near the top of the deck.
+    // Before a recording the expanded window holds 開始 in the middle of the free space, with no
+    // line yet; recording, the line lies near the top of the deck.
     const restBase = s.centred ? (h - START_FOOT) * START_LIFT : s.startBase;
     const base = this.mode === "dot" ? restBase + (s.base - restBase) * this.move : s.base;
     e.tint.setAttribute("d", `M-2 ${r1(base)}H${w + 2}V${h + 2}H-2Z`);
     if (this.mode === "dot") {
       const restX = s.centred ? w / 2 : s.dotX;
       const x = restX + (s.startX - restX) * this.move;
-      const r = Math.max(0, this.dotR + 3 * this.lift);
-      // The line appears as the dot goes down to become its pen; the compact one waits at the
-      // start of its line, which reaches back to the edge as the dot moves to where the pen starts.
+      // The line appears as 開始 fades and the pen comes down to where it starts; the compact one
+      // waits under 開始 on its line.
       setLine(e.rest, x, w, base);
       e.rest.setAttribute("opacity", s.centred ? this.move.toFixed(3) : "1");
       setLine(e.restLead, 0, x, base);
       e.restLead.setAttribute("opacity", this.move.toFixed(3));
-      // Two wavy rings, each bigger and paler, shrink with the dot and fade as it leaves.
-      const scale = this.dotR / s.dot;
-      const amp = 1 + 0.8 * this.lift;
-      e.ring1.setAttribute("d", blobPath(x, base, s.rings[0] * scale, 1.8 * amp, 7, 0.6 + this.stir * 1.6));
-      e.ring2.setAttribute("d", blobPath(x, base, s.rings[1] * scale, 2.4 * amp, 9, 2.1 - this.stir * 2.1));
-      const ringsShown = Math.max(0, Math.min(1, 1 - this.move * 2.2)).toFixed(3);
-      e.ring1.setAttribute("opacity", ringsShown);
-      e.ring2.setAttribute("opacity", ringsShown);
       e.pen.setAttribute("cx", String(r1(x)));
       e.pen.setAttribute("cy", String(r1(base)));
-      e.pen.setAttribute("r", String(r1(r)));
-      // 開始 is written on the big dot; it goes as soon as the dot starts to shrink.
-      e.label.setAttribute("x", String(r1(x)));
-      e.label.setAttribute("y", String(r1(base)));
-      e.label.setAttribute("opacity", s.centred ? Math.max(0, Math.min(1, (this.dotR - 0.7 * s.dot) / (0.3 * s.dot))).toFixed(3) : "0");
+      e.pen.setAttribute("r", String(r1(Math.max(0, this.dotR))));
       e.live.setAttribute("opacity", "0");
       e.map.setAttribute("opacity", "0");
       return;
     }
-    e.label.setAttribute("opacity", "0");
-    e.ring1.setAttribute("d", "");
-    e.ring2.setAttribute("d", "");
     e.rest.setAttribute("opacity", "0");
     e.restLead.setAttribute("opacity", "0");
     let ax: number = s.startX;
@@ -311,12 +274,11 @@ class DeckLine implements Animated {
 
 /**
  * The bottom of the main window and of a past session: one line across the window. Before a
- * recording a red dot on two wavy rings waits in the middle of the free space (in the compact
- * window, at the start of an empty line). Pressing it sends the dot down to the bottom, where it
- * shrinks into a pen tip that draws the line as it moves: 相手 above the line in red, 自分 below
- * it in ink, over a red tint. When the session is saved the pen lifts and the line zooms out to
- * the whole session, which you can point at for the time and click to jump there; the finished
- * session's buttons sit under it.
+ * recording 開始 waits in the middle of the free space (in the compact window, at the start of an
+ * empty line). Pressing it brings the line down to the bottom with a pen tip that draws it as it
+ * moves: 相手 above the line in the accent, 自分 below it in ink, over the accent's tint. When the
+ * session is saved the pen lifts and the line zooms out to the whole session, which you can point
+ * at for the time and click to jump there; the finished session's buttons sit under it.
  */
 export function Deck({
   compact = false,
@@ -332,7 +294,6 @@ export function Deck({
   /** Shows 「新しい録音」 (the main window only). */
   onNew?: boolean;
 }) {
-  const { t } = useTranslation();
   const recState = useRecording((s) => s.state);
   const finishing = useRecording((s) => s.finishing);
   const state: DeckState =
@@ -409,11 +370,7 @@ export function Deck({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compact]);
 
-  useEffect(() => {
-    lineRef.current?.setLabel(t("start"));
-  }, [t, compact]);
-
-  // Moving between states: the dot becomes the pen, the line comes to rest, and back. The deck
+  // Moving between states: 開始 gives way to the pen, the line comes to rest, and back. The deck
   // has already been laid out at its new height (taller before a recording); it is held at the old
   // one and eased to the new one together with the line, before anything is painted.
   useLayoutEffect(() => {
@@ -430,7 +387,7 @@ export function Deck({
     const fromH = lastHeight.current;
     const toH = root.getBoundingClientRect().height;
     const resizes = Math.abs(toH - fromH) > 0.5;
-    // While it moves, what waits under the dot stays hidden (`data-moving`; React never sets it).
+    // While it moves, 開始 and what waits under it stay hidden (`data-moving`; React never sets it).
     const hold = () => {
       if (!resizes) return;
       root.dataset.moving = "";
@@ -448,7 +405,7 @@ export function Deck({
     if (state === "start") {
       setScrub(null);
       if (from === "review") {
-        // 「新しい録音」: the session's line flattens, rises to the middle and the dot grows back.
+        // 「新しい録音」: the session's line flattens and rises to the middle, the pen fades and 開始 comes back.
         hold();
         line.tween(300, (p) => (line.amp = 1 - p), () => {
           line.mode = "dot";
@@ -456,14 +413,13 @@ export function Deck({
           line.amp = 1;
           line.shape = null;
           line.move = 1;
-          line.dotR = 0;
-          line.lift = 0;
+          line.dotR = size.pen;
           line.tween(
             480,
             (p) => {
               ease(p);
               line.move = 1 - p;
-              line.dotR = size.dot * p;
+              line.dotR = size.pen * (1 - p);
             },
             release,
           );
@@ -474,15 +430,14 @@ export function Deck({
         line.mode = "dot";
         line.k = 0;
         line.move = 0;
-        line.dotR = size.dot;
+        line.dotR = 0;
         line.draw();
       }
       return;
     }
     if (from === "start") {
-      // 開始: the line sinks to the bottom while the dot shrinks into the pen at its start.
+      // 開始: the line sinks to the bottom while the pen comes in at its start.
       line.stop();
-      line.lift = 0;
       hold();
       line.mode = "dot";
       line.tween(
@@ -490,7 +445,7 @@ export function Deck({
         (p) => {
           ease(p);
           line.move = p;
-          line.dotR = size.dot + (size.pen - size.dot) * p;
+          line.dotR = size.pen * p;
         },
         () => {
           release();
@@ -549,18 +504,6 @@ export function Deck({
     if (line.mode !== "live" || !line.recording) line.draw();
   }, [items, durationMs, sound, two, state]);
 
-  /** The start dot swells a little under the pointer. */
-  const hover = (on: boolean) => {
-    const line = lineRef.current;
-    if (!line) return;
-    if (line.mode !== "dot") {
-      line.lift = 0;
-      return;
-    }
-    const from = line.lift;
-    line.tween(160, (p) => (line.lift = from + ((on ? 1 : 0) - from) * p));
-  };
-
   const scrubAt = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg || state !== "review" || total <= 0) return null;
@@ -574,8 +517,6 @@ export function Deck({
     "--kk-h": `${size.height}px`,
     "--kk-dx": `${size.dotX}px`,
     "--kk-sb": `${size.startBase}px`,
-    "--kk-dot": `${size.dot}px`,
-    "--kk-ring": `${size.rings[1]}px`,
     "--kk-b": `${size.base}px`,
     "--kk-rest": `calc((100% - ${START_FOOT}px) * ${START_LIFT})`,
   } as CSSProperties;
@@ -595,7 +536,7 @@ export function Deck({
       <svg ref={svgRef} className="kk-line pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden />
       {/* Where the finished session's line takes the pointer; above it, the pointer reaches the text. */}
       {under && state === "review" && <div className="kk-scrub-zone" aria-hidden />}
-      {state === "start" && <StartRow compact={compact} onHover={hover} />}
+      {state === "start" && <StartRow compact={compact} />}
       {(state === "recording" || state === "paused") && <LiveRow compact={compact} paused={state === "paused"} />}
       {state === "finishing" && <FinishingRow />}
       {state === "review" && sessionId && <ReviewRow compact={compact} sessionId={sessionId} folder={folder} onNew={onNew} player={player} />}
@@ -625,11 +566,11 @@ function HotkeyHint({ className }: { className: string }) {
 }
 
 /**
- * The start dot's target (the dot itself is drawn by the line). In the expanded window 開始 is
- * written on the dot, a hotkey (when one is set) is under its rings and the model sits at the
- * bottom, so the dot alone is centred; in the compact one 開始 stands on the line beside the dot.
+ * 開始, the one primary action before a recording. In the expanded window a hotkey (when one is
+ * set) is under it and the model sits at the bottom, so 開始 alone is centred; in the compact one
+ * it sits on the empty line where the pen will start.
  */
-function StartRow({ compact, onHover }: { compact: boolean; onHover: (on: boolean) => void }) {
+function StartRow({ compact }: { compact: boolean }) {
   const { t } = useTranslation();
   const state = useRecording((s) => s.state);
   const info = useSettings((s) => s.info);
@@ -645,23 +586,11 @@ function StartRow({ compact, onHover }: { compact: boolean; onHover: (on: boolea
   };
   return (
     <div className="absolute inset-0 animate-fade-in">
-      <button
-        type="button"
-        className="kk-go"
-        onClick={start}
-        onPointerEnter={() => !disabled && onHover(true)}
-        onPointerLeave={() => onHover(false)}
-        disabled={disabled}
-        aria-label={t("start")}
-        data-starting={starting || undefined}
-      />
+      <button type="button" className="kk-go button button-primary" onClick={start} disabled={disabled} data-starting={starting || undefined}>
+        {t("start")}
+      </button>
       {compact ? (
-        <>
-          <span className="kk-go-label" aria-hidden>
-            {t("start")}
-          </span>
-          <HotkeyHint className="kk-go-hint" />
-        </>
+        <HotkeyHint className="kk-go-hint" />
       ) : (
         <>
           <div className="kk-go-under">
@@ -727,8 +656,8 @@ function LiveRow({ compact, paused }: { compact: boolean; paused: boolean }) {
   // Waiting for Stop, the lag only grows and says nothing (FR-25).
   const note = paused ? t("paused") : deferred ? t("deferredNote") : lag >= 2 ? t("lag", { n: lag }) : "";
   // Small and grey while it may catch up, bold from 15 s, yellow from 30 s (FR-25).
-  const noteClass = paused || deferred || lag < 15 ? "font-semibold text-muted" : lag < 30 ? "font-bold text-fg" : "font-bold text-lag";
-  const ctl = "kk-ctl grid shrink-0 place-items-center rounded-[11px] border border-line bg-surface text-fg transition-colors duration-150 hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-40";
+  const noteClass = paused || deferred || lag < 15 ? "text-muted" : lag < 30 ? "font-medium text-fg" : "font-medium text-lag";
+  const ctl = "kk-ctl grid shrink-0 place-items-center rounded-md border border-line-strong bg-surface text-fg transition-colors duration-150 hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-40";
   return (
     <>
       {/* The row has no room left beside the timer, so the note sits on the line. */}
@@ -738,7 +667,7 @@ function LiveRow({ compact, paused }: { compact: boolean; paused: boolean }) {
           {deferred && !paused && (
             <>
               {" · "}
-              <button type="button" onClick={() => void commands.deferTranscription(false).catch(reportError)} className="pointer-events-auto font-bold text-fg underline-offset-2 hover:underline">
+              <button type="button" onClick={() => void commands.deferTranscription(false).catch(reportError)} className="pointer-events-auto font-medium text-accent-text underline-offset-2 hover:underline">
                 {t("resumeTranscription")}
               </button>
             </>
@@ -758,7 +687,7 @@ function LiveRow({ compact, paused }: { compact: boolean; paused: boolean }) {
             aria-pressed={paused}
             aria-label={paused ? t("resume") : t("pause")}
             title={paused ? t("resume") : t("pause")}
-            className={`${ctl} ${paused ? "!border-fg !bg-fg !text-bg" : ""}`}
+            className={`${ctl} ${paused ? "!border-accent-soft !bg-accent-soft !text-accent-text" : ""}`}
           >
             {paused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}
           </button>
@@ -766,7 +695,7 @@ function LiveRow({ compact, paused }: { compact: boolean; paused: boolean }) {
             type="button"
             onClick={toggleRecording}
             aria-label={t("stop")}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full bg-rec-strong font-bold text-rec-fg transition-colors duration-150 hover:bg-rec-hover ${compact ? "h-9 px-4 text-[12.5px]" : "h-[42px] px-[18px] text-[13px]"}`}
+            className={`button button-primary shrink-0 !py-0 ${compact ? "h-9 !px-4 !text-[13px]" : "h-[42px] !px-[18px] !text-[14px]"}`}
           >
             <Square size={10} fill="currentColor" />
             {t("stop")}
@@ -809,7 +738,7 @@ function FinishingRow() {
     <div className="kk-row flex items-center justify-between gap-3 text-[12.5px] animate-fade-in" title={t("finishingDetail")}>
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span className="min-w-0 truncate">
-          <b className="font-semibold">{t("finishing")}</b>
+          <b className="font-medium">{t("finishing")}</b>
           {left !== null && <span className="text-muted"> · {t("finishingLeft", { n: left })}</span>}
         </span>
         {bar && <Progress value={finishing.doneMs} max={finishing.totalMs} className="max-w-[260px] animate-fade-in" />}
@@ -821,7 +750,7 @@ function FinishingRow() {
   );
 }
 
-/** Play (when the session kept its sound), copy, 書き出し, more, and 「新しい録音」 with the red dot it started from. */
+/** Play (when the session kept its sound), copy, 書き出し, more, and 「新しい録音」. */
 function ReviewRow({ compact, sessionId, folder, onNew, player }: { compact: boolean; sessionId: string; folder?: string; onNew: boolean; player: Player }) {
   const { t } = useTranslation();
   const setExportFor = useUi((s) => s.setExportFor);
@@ -846,13 +775,13 @@ function ReviewRow({ compact, sessionId, folder, onNew, player }: { compact: boo
     ];
     await popupMenu(entries).catch(reportError);
   };
-  const act = `kk-act inline-flex shrink-0 items-center gap-2 rounded-[11px] border border-line bg-surface font-semibold whitespace-nowrap transition-colors duration-150 hover:bg-surface-2 ${compact ? "h-9 px-3 text-[12.5px]" : "h-10 px-3 text-[13px]"}`;
+  const act = `kk-act inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong bg-surface font-medium whitespace-nowrap transition-colors duration-150 hover:bg-surface-2 ${compact ? "h-9 px-3 text-[12.5px]" : "h-10 px-3 text-[13px]"}`;
   return (
     <div className="kk-row flex items-center gap-2 animate-fade-in [animation-delay:500ms]">
       {player.available && (
         <button
           type="button"
-          className={`${act} justify-center !px-0 ${compact ? "!w-9" : "!w-10"} ${player.playing ? "!border-fg !bg-fg !text-bg" : ""}`}
+          className={`${act} justify-center !px-0 ${compact ? "!w-9" : "!w-10"} ${player.playing ? "!border-accent-soft !bg-accent-soft !text-accent-text" : ""}`}
           onClick={player.toggle}
           aria-pressed={player.playing}
           aria-label={player.playing ? t("pausePlayback") : t("play")}
@@ -881,7 +810,6 @@ function ReviewRow({ compact, sessionId, folder, onNew, player }: { compact: boo
       <span className="min-w-1 flex-1" />
       {onNew && (
         <button type="button" className={act} onClick={newRecording}>
-          <span className="size-[11px] shrink-0 rounded-full bg-rec" aria-hidden />
           {t("newRecording")}
         </button>
       )}

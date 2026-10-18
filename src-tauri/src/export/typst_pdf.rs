@@ -186,7 +186,7 @@ pub fn typst_source(
 ) -> String {
     let doc = doc(session, opts, |shot| links.get(&shot.file).cloned());
     let first_line = format!(
-        "// Kikitori {app_version} で書き出し。画像のフォルダと一緒に置いたまま `typst compile` すると PDF になります。"
+        "// Chidori {app_version} で書き出し。画像のフォルダと一緒に置いたまま `typst compile` すると PDF になります。"
     );
     source(&doc, &first_line)
 }
@@ -272,7 +272,7 @@ pub fn render(session: &Session, opts: &ExportOptions, folder: &Path, app_versio
         library: LazyHash::new(Library::default()),
         book: LazyHash::new(FontBook::from_fonts(&fonts)),
         fonts,
-        main: Source::new(file_id("/transcript.typ"), source(&doc, "// Kikitori")),
+        main: Source::new(file_id("/transcript.typ"), source(&doc, "// Chidori")),
         files,
     };
     let errors = |e: typst::ecow::EcoVec<typst::diag::SourceDiagnostic>| {
@@ -282,7 +282,7 @@ pub fn render(session: &Session, opts: &ExportOptions, folder: &Path, app_versio
     let document = result.output.map_err(errors)?;
     let options = typst_pdf::PdfOptions {
         ident: Smart::Custom(session.id.clone()),
-        creator: Smart::Custom(Some(format!("Kikitori {app_version}"))),
+        creator: Smart::Custom(Some(format!("Chidori {app_version}"))),
         ..Default::default()
     };
     let pdf = typst_pdf::pdf(&document, &options).map_err(errors);
@@ -343,7 +343,7 @@ mod tests {
             ],
         };
         let src = source(&d, "// first");
-        assert!(src.starts_with("// first\n\n// The look of a Kikitori transcript"));
+        assert!(src.starts_with("// first\n\n// The look of a Chidori transcript"));
         assert!(src.ends_with(
             "#set document(title: \"T\\\"#\")\n#header(\"T\\\"#\", \"m\")\n\n\
              #entry(time: \"15:00:00\", label: \"自分\", me: true, important: true, \"]) #evil\")\n\
@@ -367,7 +367,7 @@ mod tests {
             src.contains("#shot(\"talk_images/0001_151603.png\", 112.5mm, \"15:16:03 のスクリーンショット\")"),
             "{src}"
         );
-        assert!(src.starts_with("// Kikitori 0.1.0 で書き出し。"));
+        assert!(src.starts_with("// Chidori 0.1.0 で書き出し。"));
 
         let dir = tempfile::tempdir().unwrap();
         for item in &mut s.items {

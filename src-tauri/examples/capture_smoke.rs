@@ -3,10 +3,10 @@
 
 use std::time::{Duration, Instant};
 
-use kikitori_lib::audio::source::AudioSource;
-use kikitori_lib::audio::win::capture::{CaptureTarget, WasapiSource};
-use kikitori_lib::platform;
-use kikitori_lib::session::model::SourceId;
+use chidori_lib::audio::source::AudioSource;
+use chidori_lib::audio::win::capture::{CaptureTarget, WasapiSource};
+use chidori_lib::platform;
+use chidori_lib::session::model::SourceId;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();

@@ -64,3 +64,6 @@ coverage/
 # ---- Generated test fixtures (see tests/fixtures/README.md) ----
 tests/fixtures/generated/
 tests/fixtures/cache/
+
+# Copied from @yusai/kamon-react by brand-sync on install
+.claude/skills/brand-ui/

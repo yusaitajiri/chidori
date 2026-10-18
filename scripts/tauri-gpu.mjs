@@ -31,10 +31,10 @@ async function ensureVulkanRuntime() {
   console.log(`Fetching the Vulkan runtime from ${VULKAN_RT.url}`);
   const res = await fetch(VULKAN_RT.url);
   if (!res.ok) throw new Error(`download failed: HTTP ${res.status}`);
-  const zip = join(tmpdir(), "kikitori-vulkan-rt.zip");
+  const zip = join(tmpdir(), "chidori-vulkan-rt.zip");
   writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
   if (sha256(zip) !== VULKAN_RT.zipSha256) throw new Error("Vulkan runtime checksum mismatch");
-  const out = join(tmpdir(), "kikitori-vulkan-rt");
+  const out = join(tmpdir(), "chidori-vulkan-rt");
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   // Windows 10+ ships bsdtar, which reads zip files. Call it by path: Git Bash puts GNU tar,

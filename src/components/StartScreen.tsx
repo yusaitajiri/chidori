@@ -29,7 +29,7 @@ export function StartScreen({ compact }: { compact: boolean }) {
   return (
     <div className="px-4 pt-3 pb-2">
       <div className="mx-auto w-full max-w-[380px] space-y-2">
-        <div className="px-0.5 text-[12px] font-semibold text-muted">{t("listenTo")}</div>
+        <div className="px-0.5 text-[12px] font-medium text-muted">{t("listenTo")}</div>
         <SourcePicker />
       </div>
     </div>

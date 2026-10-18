@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TimelineItem } from "../ipc/types";
-import { blobPath, heightOf, liveLine, mapLine, settle, shapeFromActivity, shapeOf, smoothPath, type Geometry, type Sample } from "./line";
+import { heightOf, liveLine, mapLine, settle, shapeFromActivity, shapeOf, smoothPath, type Geometry, type Sample } from "./line";
 
 const G: Geometry = { base: 30, up: 20, down: 15, step: 2, startX: 48, endPad: 40 };
 const ends = (d: string) => [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)(?=C|M|L|$)/g)].map((m) => [Number(m[1]), Number(m[2])]);
@@ -117,15 +117,5 @@ describe("shapes", () => {
     expect(Math.max(...ends(l.m).map((p) => p[1]))).toBeGreaterThan(30);
     expect(l.fill).toMatch(/^M10 31L10 /);
     expect(l.fill).toMatch(/L190 31Z$/);
-  });
-});
-
-describe("blobPath", () => {
-  it("stays within the rim's waves around the centre", () => {
-    const pts = [...blobPath(50, 50, 30, 2, 7, 0.4).matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((m) => Math.hypot(Number(m[1]) - 50, Number(m[2]) - 50));
-    expect(pts).toHaveLength(96);
-    expect(Math.min(...pts)).toBeGreaterThan(27.9);
-    expect(Math.max(...pts)).toBeLessThan(32.1);
-    expect(blobPath(0, 0, 0, 2, 7, 0)).toBe("");
   });
 });

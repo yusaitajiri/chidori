@@ -49,13 +49,13 @@ export function ModelRow({ m, p, onChanged, compact }: { m: ModelEntry; p?: Down
   };
 
   return (
-    <div className={`rounded-2xl border bg-surface p-3 transition-[border-color,box-shadow] duration-200 ${m.selected && m.installed ? "border-fg" : "border-line"}`}>
+    <div className={`rounded-lg border bg-surface p-3 transition-[border-color,box-shadow] duration-200 ${m.selected && m.installed ? "border-fg" : "border-line"}`}>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-semibold">{name}</span>
-            {m.recommended && <span className="rounded-[5px] border border-line px-1.5 text-[10.5px] font-bold text-muted">{t("recommended")}</span>}
-            {m.selected && m.installed && <span className="rounded-[5px] bg-fg px-1.5 text-[10.5px] font-bold text-bg">{t("selected")}</span>}
+            <span className="font-medium">{name}</span>
+            {m.recommended && <span className="rounded-sm border border-line px-1.5 text-[10.5px] font-medium text-muted">{t("recommended")}</span>}
+            {m.selected && m.installed && <span className="rounded-sm bg-fg px-1.5 text-[10.5px] font-medium text-bg">{t("selected")}</span>}
           </div>
           <div className="mt-0.5 text-xs leading-relaxed text-muted">
             {desc} · {bytes(m.sizeBytes)} · {m.license}
@@ -144,7 +144,7 @@ export function ModelManager({ standalone }: { standalone?: boolean }) {
         <ModelRow key={m.id} m={m} p={progress[m.id]} onChanged={refresh} />
       ))}
       {!more && others.length > 0 && (
-        <button type="button" onClick={() => setMore(true)} className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-muted transition-colors hover:text-fg">
+        <button type="button" onClick={() => setMore(true)} className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-xs font-medium text-muted transition-colors hover:text-fg">
           <ChevronDown size={13} />
           {t("moreModels", { n: others.length })}
         </button>

@@ -1,10 +1,10 @@
-# Kikitori — Live Transcription App Spec (v1)
+# Chidori — Live Transcription App Spec (v1)
 
 Oct 2, 2026 · @Yusai Tajiri · trimmed to the shipped app on 2026-10-05
 
 ## 1. How to use this spec
 
-This spec says what Kikitori does and why. The code holds the details: exact parameters, IPC
+This spec says what Chidori does and why. The code holds the details: exact parameters, IPC
 types, settings keys, the model catalog. Where the two disagree, fix whichever is wrong.
 `docs/DECISIONS.md` records every choice the spec left open and every deviation from it, with
 the reason; `AGENTS.md` has the build and contribution rules.
@@ -25,7 +25,7 @@ Section numbers are cited from code comments ("section 8", "FR-53"), so they sta
 
 ## 2. Product overview
 
-Kikitori turns a meeting or lecture on a Windows PC into a Markdown or PDF transcript with
+Chidori turns a meeting or lecture on a Windows PC into a Markdown or PDF transcript with
 screenshots in place. No audio leaves the machine.
 
 It came from a chat between the author and two friends. One used a free local transcriber, pasted
@@ -54,7 +54,7 @@ friend installs and runs it alone, apart from the SmartScreen warning.
 
 ## 3. Core flows
 
-**Flow A: a Zoom call with screenshots (the main flow).** Open Kikitori. Pick Zoom as the source;
+**Flow A: a Zoom call with screenshots (the main flow).** Open Chidori. Pick Zoom as the source;
 「会話として録音」 (record as a conversation) adds the mic. Press 開始. The live line shows each
 side's sound and lines appear a few seconds after each sentence, grey while still being spoken.
 Press the screenshot key while Zoom keeps focus; a toast confirms and the picture lands in the
@@ -81,7 +81,7 @@ items (section 19).
 | --- | --- | --- |
 | FR-01 | Recording | One button toggles Start/Stop; a global hotkey does too once the user sets one (none by default). |
 | FR-02 | Recording | Capture starts within 1 s of Start. If the model is still loading, audio is buffered, not lost. |
-| FR-03 | Recording | While recording: a red dot, elapsed time (without paused time), each source's level drawn as the live line, and the tray in its recording state. |
+| FR-03 | Recording | While recording: a recording mark, elapsed time (without paused time), each source's level drawn as the live line, and the tray in its recording state. |
 | FR-04 | Recording | On Stop, transcribe all queued audio with progress, then save the session. |
 | FR-05 | Recording | Pause and resume, with markers in the timeline. |
 | FR-06 | Recording | A cut button starts a new part of the session (a new topic or scene), recorded as a `cut` marker; exports head each part with its time. |
@@ -105,7 +105,7 @@ items (section 19).
 | FR-26 | Transcription | A custom word list (up to 50 terms) is passed to Whisper as its prompt. |
 | FR-30 | Screenshots | A button, and a global hotkey once set, captures the recorded app's window (else the screen under the cursor). Alternatives: the cursor's screen, all screens. |
 | FR-31 | Screenshots | The image is placed in the timeline at capture time, shown in the live view and confirmed by a toast. |
-| FR-32 | Screenshots | Kikitori's own window never appears in screenshots or screen shares. |
+| FR-32 | Screenshots | Chidori's own window never appears in screenshots or screen shares. |
 | FR-33 | Screenshots | Delete a screenshot or caption it from the transcript. |
 | FR-34 | Screenshots | The camera's menu picks what screenshots take: the recorded app's window, the cursor's screen or all screens (remembered as the setting), or any open window, for the rest of the recording. |
 | FR-40 | Transcript | Live list; auto-scroll pauses when the user scrolls up and 最新へ appears. |
@@ -114,7 +114,7 @@ items (section 19).
 | FR-51 | Copy | 「Agent用にコピー」 copies the cleanup prompt followed by the transcript. |
 | FR-52 | Sessions | On Stop, `transcript.md` and `images/` are saved in the session folder, which opens with one click. |
 | FR-53 | Export | PDF with Japanese fonts and full-width screenshots; also Typst source and Markdown (folder or ZIP). |
-| FR-60 | Sessions | Each session is one folder under the output root (default `Documents\Kikitori`). |
+| FR-60 | Sessions | Each session is one folder under the output root (default `Documents\Chidori`). |
 | FR-61 | Sessions | A crash-safe event log; the next launch offers recovery (Flow D). |
 | FR-62 | Sessions | History, grouped by day: open, re-export, delete one or several (to the Recycle Bin). |
 | FR-63 | Sessions | Rename a session; the default title is the source app's name. |
@@ -132,12 +132,13 @@ items (section 19).
 ## 5. UI and UX
 
 One small window: compact (380 × 170) for sitting beside a call, expanded (420 × 640, resizable)
-for the transcript, History and Settings. The look is "one dot, one line": white paper, ink, and
-one red that means the voice you hear. `docs/DECISIONS.md` → UI explains every part of it and is
-the reference for UI changes.
+for the transcript, History and Settings. The look is the kamon brand (`@yusai/kamon-react`): a
+warm grey ground, ink, and Chidori's one colour, 朱, for what you can act on, what is selected and
+the voice you hear. `docs/DECISIONS.md` → UI explains how the app applies it and is the reference
+for UI changes.
 
 - **Places.** Expanded: 録音 · 履歴 · 設定 in the title bar. The recording place has three phases:
-  the start screen (the red dot with 開始, the source picker), the recording (a header that stays
+  the start screen (開始, the source picker), the recording (a header that stays
   in place with the title and the source, the transcript, the live line) and the finished
   session (header, transcript, the session's line, copy and export). The recording's title
   renames on a click; its source is a dropdown, where a pick switches the source (FR-17). The
@@ -145,8 +146,8 @@ the reference for UI changes.
 - **Rare actions** (Markdown copy, Agent用, exports, history, settings) sit in the … menu, a
   native popup so it fits the compact window.
 - **Errors** are a banner at the top with one action, e.g. 「マイクへのアクセスがオフです [設定を開く]」
-  opening `ms-settings:privacy-microphone`. Banners are inverted (paper on ink), so red never
-  means an error.
+  opening `ms-settings:privacy-microphone`. Errors are on the brand's brick tint and warnings on
+  its ochre, always with an icon and words, since 朱 sits close to both.
 - **Screenshot confirmation** is a toast; with the window hidden, a silent Windows notification.
 - **Light and dark** follow Windows; motion honours `prefers-reduced-motion`. Every icon button
   has an `aria-label` and the UI is keyboard reachable.
@@ -158,8 +159,8 @@ the reference for UI changes.
 leaving `recording`; a source that fails shows an error banner while the others carry on; a
 full disk stops the recording and saves what exists.
 
-**Tray.** The red bird alone when idle, with red ripples while recording and grey ones while
-paused or finishing. Left-click shows or hides the window.
+**Tray.** The app icon in ink when idle, paused or finishing, and in its 朱 while recording.
+Left-click shows or hides the window.
 
 **Hotkeys** are off until set in 設定 › ショートカット. When idle, the start hotkey starts with the
 last-used source; the screenshot, important-mark and cut hotkeys show 「録音中のみ使えます」.
@@ -215,7 +216,7 @@ dropped. System loopback sends nothing in silence, so the DSP thread pads silenc
 500 ms without packets, letting an open utterance close.
 
 **App picker.** Lists audio sessions on every active render device, skipping system sounds,
-Kikitori itself and `audiodg.exe`. Each PID is walked up its parents while the executable name
+Chidori itself and `audiodg.exe`. Each PID is walked up its parents while the executable name
 matches; that root covers every tab of a browser, whose audio comes from a child process.
 Sessions playing now come first, then the rest, then (under その他) windowed apps with no
 session yet. Each playing app shows its live sound from the peak meter Windows keeps for every
@@ -313,7 +314,7 @@ taken 5 s; 処理を中止 ends the transcript with 「（以降、未処理の�
 
 **GPU.** Before anything touches Vulkan, implicit layers are disabled
 (`VK_LOADER_LAYERS_DISABLE`; overlays such as OBS or Steam crash it), unless
-`KIKITORI_KEEP_VK_LAYERS=1`. The model loads in the background at launch with a warm-up on
+`CHIDORI_KEEP_VK_LAYERS=1`. The model loads in the background at launch with a warm-up on
 silence. If GPU init fails, or crashed the process last time, the app uses the CPU, says
 「GPUを使えないためCPUで実行します」, and remembers it for that model and GPU until 「GPUを再試行」.
 
@@ -331,7 +332,7 @@ screen under the cursor). A
 full-resolution PNG goes to `images/0001_151603.png` (counter, local `HHMMSS`), a 320 px JPEG
 thumbnail goes to the UI, and the `screenshot` event is logged once the file is written.
 
-**Keeping Kikitori out.** The window is content-protected (`WDA_EXCLUDEFROMCAPTURE`): invisible,
+**Keeping Chidori out.** The window is content-protected (`WDA_EXCLUDEFROMCAPTURE`): invisible,
 not black, in screenshots and in the user's screen share. On by default.
 
 **Known limits.** DRM video shows black. Windows does not deliver global hotkeys to a normal app
@@ -354,11 +355,11 @@ from it, so a crash loses at most the last line.
 
 | What | Where |
 | --- | --- |
-| Sessions | `Documents\Kikitori\` (configurable) |
+| Sessions | `Documents\Chidori\` (configurable) |
 | Projects | `projects.json` beside the session folders (FR-64) |
-| Settings, app state | `%APPDATA%\dev.yusai.kikitori\` (`settings.json`, `state.json`) |
-| Models | `%LOCALAPPDATA%\dev.yusai.kikitori\models\` (large, not roaming) |
-| Logs | `%LOCALAPPDATA%\dev.yusai.kikitori\logs\` |
+| Settings, app state | `%APPDATA%\dev.yusai.chidori\` (`settings.json`, `state.json`) |
+| Models | `%LOCALAPPDATA%\dev.yusai.chidori\models\` (large, not roaming) |
+| Logs | `%LOCALAPPDATA%\dev.yusai.chidori\logs\` |
 
 **Session folder** `YYYY-MM-DD_HHMM_<title>/` (title sanitized for Windows, at most 40
 characters, `-2` and so on if taken):
@@ -368,7 +369,7 @@ characters, `-2` and so on if taken):
   `screenshot_deleted`, `caption_set`, `marker`, `title_changed`, `project_set`, `language_detected`,
   `audio_started`, `session_continued`, `session_stopped`. Each is appended and flushed, synced every 5 s and on Stop; a truncated
   last line is ignored on replay.
-- `session.json`: a snapshot written on Stop and after edits, plus hashes of files Kikitori
+- `session.json`: a snapshot written on Stop and after edits, plus hashes of files Chidori
   wrote.
 - `transcript.md`: written on Stop and after edits.
 - `levels.bin`: each side's level ten times a second, drawn as the session's line.
@@ -403,7 +404,7 @@ date: 2026-10-02 15:13
 duration: 01:02:15
 sources: [相手 (Zoom), 自分 (マイク)]
 model: turbo-q5
-app: Kikitori 0.1.0
+app: Chidori 0.1.0
 ---
 
 # Zoom — 2026-10-02 15:13
@@ -430,7 +431,7 @@ app: Kikitori 0.1.0
   tells the agent what ★ means and to keep it.
 - Image links are relative. Alt text is the caption, else 「HH:MM:SS のスクリーンショット」; a
   caption is also an italic line under the image.
-- If the user edited `transcript.md` (its hash differs from what Kikitori wrote), Kikitori writes
+- If the user edited `transcript.md` (its hash differs from what Chidori wrote), Chidori writes
   `transcript (2).md` instead of overwriting it.
 
 **Clipboard**
@@ -447,8 +448,8 @@ name; nothing is written into the session folder.
 - **PDF (FR-53):** the session becomes a Typst document (`export/transcript.typ` preamble, then
   one call per block with all session text in string literals so it is never read as markup),
   compiled in process with the `typst` crate. A4, 18 mm margins, Yu Gothic (Meiryo, then MS
-  Gothic), 相手 in red, screenshots full width as JPEG ≤ 1600 px, and the app's name and red bird
-  in the footer. It opens when saved. If Typst fails, the print HTML is saved instead and opened
+  Gothic), the brand's ink with 相手 in 朱, 子持ち罫 under the title, screenshots full width as
+  JPEG ≤ 1600 px, and the app's name in the footer. It opens when saved. If Typst fails, the print HTML is saved instead and opened
   in the browser with 「ブラウザの印刷からPDFに保存してください」.
 - **Typst:** the same document as a `.typ` file, with its screenshots in `<name>_images/`, so
   `typst compile` gives the same PDF after the user edits it.
@@ -595,7 +596,7 @@ one pass with the same model, and latency within section 16 on the reference GPU
 | --- | --- | --- |
 | App and system audio | ScreenCaptureKit (13+) with a filter for the chosen app; Core Audio process taps (14.2+) as the alternative | That audio is filtered by app, not just video |
 | Mic | `cpal`, or ScreenCaptureKit's mic (15+) | Alignment with the app stream |
-| Screenshots | ScreenCaptureKit or `xcap` | Excluding Kikitori's window |
+| Screenshots | ScreenCaptureKit or `xcap` | Excluding Chidori's window |
 | GPU | `whisper-rs` feature `metal` | `turbo-q5` speed on M-series |
 | PDF | The same Typst export with a macOS font list (Hiragino Sans) | — |
 | Distribution | Signing and notarization, or right-click → Open for friends | — |

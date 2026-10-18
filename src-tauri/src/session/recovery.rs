@@ -13,7 +13,7 @@ use crate::export::{ExportOptions, join_text, session_start};
 
 pub const SNAPSHOT_FILE: &str = "session.json";
 
-/// `session.json`: the session plus the hashes of files Kikitori wrote (so a transcript the
+/// `session.json`: the session plus the hashes of files Chidori wrote (so a transcript the
 /// user edited is never overwritten).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

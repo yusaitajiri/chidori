@@ -243,16 +243,3 @@ export function sessionShape(items: readonly TimelineItem[], durationMs: number 
   const s = shapeOf(items, durationMs, n);
   return sound ? { o: sound.others.map((v) => v / 100), m: sound.me.map((v) => v / 100), shots: s.shots } : s;
 }
-
-/** A disc whose rim is a gentle wave: `lobes` bumps of height `amp` around radius `r`, turned by `phase`. */
-export function blobPath(cx: number, cy: number, r: number, amp: number, lobes: number, phase: number): string {
-  if (r <= 0) return "";
-  const n = 96;
-  let d = "";
-  for (let i = 0; i < n; i++) {
-    const th = (i / n) * Math.PI * 2;
-    const rr = r + amp * Math.sin(lobes * th + phase);
-    d += `${i ? "L" : "M"}${r1(cx + rr * Math.cos(th))} ${r1(cy + rr * Math.sin(th))}`;
-  }
-  return `${d}Z`;
-}

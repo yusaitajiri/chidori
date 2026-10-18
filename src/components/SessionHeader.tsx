@@ -9,7 +9,7 @@ import { useTranscriptStore } from "../store/transcript";
 import { ProjectButton } from "./Projects";
 import { inputClass } from "./ui";
 
-/** The last folders of a path, the way Explorer's address bar reads: `Kikitori › 2026-10-03_1513_Zoom`. */
+/** The last folders of a path, the way Explorer's address bar reads: `Chidori › 2026-10-03_1513_Zoom`. */
 const shortPath = (folder: string) => folder.split(/[\\/]/).filter(Boolean).slice(-2).join(" › ");
 
 /**
@@ -61,7 +61,7 @@ export function SessionHeader() {
         <div className="flex items-center gap-2">
           <input
             aria-label={t("newTitle")}
-            className={`${inputClass} !h-9 min-w-0 flex-1 !text-[19px] font-bold`}
+            className={`${inputClass} !h-9 min-w-0 flex-1 !text-[19px] font-medium`}
             value={draft}
             autoFocus
             onChange={(e) => setDraft(e.target.value)}
@@ -71,7 +71,7 @@ export function SessionHeader() {
               if (e.key === "Escape") setEditing(false);
             }}
           />
-          <button type="button" aria-label={t("save")} className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent text-accent-fg" onMouseDown={(e) => e.preventDefault()} onClick={rename}>
+          <button type="button" aria-label={t("save")} className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-fg" onMouseDown={(e) => e.preventDefault()} onClick={rename}>
             <Check size={15} />
           </button>
         </div>
@@ -83,9 +83,9 @@ export function SessionHeader() {
             setDraft(title ?? "");
             setEditing(true);
           }}
-          className="group -mx-1.5 flex max-w-full items-center gap-2 rounded-lg px-1.5 py-0.5 text-left transition-colors hover:bg-surface-2"
+          className="group -mx-1.5 flex max-w-full items-center gap-2 rounded-md px-1.5 py-0.5 text-left transition-colors hover:bg-surface-2"
         >
-          <h2 className="min-w-0 text-[19px] leading-snug font-bold break-words">{title}</h2>
+          <h2 className="min-w-0 text-[19px] leading-snug font-medium break-words">{title}</h2>
           <Pencil size={14} className="shrink-0 text-muted opacity-0 transition-opacity group-hover:opacity-100" />
         </button>
       )}
@@ -120,7 +120,7 @@ export function SessionHeader() {
             aria-expanded={details}
             aria-controls={detailsId}
             onClick={() => setDetails(!details)}
-            className="-mr-1 ml-auto flex items-center gap-0.5 rounded-md px-1 font-semibold transition-colors hover:text-fg"
+            className="-mr-1 ml-auto flex items-center gap-0.5 rounded-sm px-1 font-medium transition-colors hover:text-fg"
           >
             {t("details")}
             <ChevronDown size={13} className={`transition-transform duration-200 ${details ? "rotate-180" : ""}`} />

@@ -40,8 +40,8 @@ function useSave() {
 function Advanced({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   return (
-    <details className="group rounded-2xl border border-line bg-surface px-3.5">
-      <summary className="flex cursor-pointer list-none items-center justify-between py-2.5 text-[12px] font-semibold text-muted transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+    <details className="group rounded-lg border border-line bg-surface px-3.5">
+      <summary className="flex cursor-pointer list-none items-center justify-between py-2.5 text-[12px] font-medium text-muted transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
         {t("advanced")}
         <ChevronDown size={15} className="transition-transform duration-200 group-open:rotate-180" />
       </summary>
@@ -222,7 +222,7 @@ function HotkeyInput({ value, onChange, label, error }: { value: string; onChang
         </button>
         {value && !recording && <Button onClick={() => onChange("")}>{t("hotkeyClear")}</Button>}
       </div>
-      {error && <div className="mt-1 text-xs font-semibold text-err">{t("hotkeyFailed", { error })}</div>}
+      {error && <div className="mt-1 text-xs font-medium text-err">{t("hotkeyFailed", { error })}</div>}
     </Field>
   );
 }
@@ -300,7 +300,7 @@ function Output({ s }: { s: SettingsT }) {
 const targetKey = { cursorMonitor: "targetCursor", allMonitors: "targetAll", appWindow: "targetApp" } as const;
 const languageKey = { ja: "langJa", en: "langEn", auto: "langAuto" } as const;
 
-/** The last folders of a path: `Documents › Kikitori`. */
+/** The last folders of a path: `Documents › Chidori`. */
 const shortPath = (path: string) => path.split(/[\\/]/).filter(Boolean).slice(-2).join(" › ");
 
 /** 設定 as a list: each section with what it is set to now. */
@@ -337,8 +337,8 @@ function SettingsIndex({ s }: { s: SettingsT }) {
                 onClick={() => go("settings", { tab: tab.id })}
                 className="grid w-full grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-2.5 border-b border-line px-1.5 py-3 text-left transition-colors hover:bg-surface-2"
               >
-                <span className="text-[13.5px] font-semibold">{t(tab.key)}</span>
-                <span className={`max-w-[210px] truncate text-right text-[12px] ${tab.id === "hotkeys" && hotkeysTaken ? "font-bold text-fg" : "text-muted"}`}>{summary[tab.id]}</span>
+                <span className="text-[13.5px] font-medium">{t(tab.key)}</span>
+                <span className={`max-w-[210px] truncate text-right text-[12px] ${tab.id === "hotkeys" && hotkeysTaken ? "font-medium text-fg" : "text-muted"}`}>{summary[tab.id]}</span>
                 <ChevronRight size={14} className="text-muted" />
               </button>
             </li>

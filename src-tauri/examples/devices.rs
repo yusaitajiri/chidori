@@ -1,13 +1,13 @@
 //! Lists capture devices and the app picker: `cargo run --example devices`.
 
-use kikitori_lib::audio::source::AudioAppLister;
+use chidori_lib::audio::source::AudioAppLister;
 
 fn main() -> anyhow::Result<()> {
-    for d in kikitori_lib::audio::win::devices::list_mic_devices()? {
+    for d in chidori_lib::audio::win::devices::list_mic_devices()? {
         println!("mic: {}{} [{}]", d.name, if d.is_default { " (default)" } else { "" }, d.id);
     }
     let t = std::time::Instant::now();
-    let apps = kikitori_lib::audio::win::sessions::WinAudioAppLister.list()?;
+    let apps = chidori_lib::audio::win::sessions::WinAudioAppLister.list()?;
     println!("listed {} apps in {:?}", apps.len(), t.elapsed());
     for a in apps {
         println!(

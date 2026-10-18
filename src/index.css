@@ -1,104 +1,53 @@
 @import "tailwindcss";
+@import "@yusai/kamon-react/tokens/tokens.css";
+/* In the components layer, so Tailwind's utilities can still adjust a kit element. */
+@import "@yusai/kamon-react/ui/ui.css" layer(components);
 
 /*
- * White paper, black ink and one true red. Red is the voice you hear: 相手's line and name, the
- * start dot and 停止. 自分 is ink. Alerts are inverted (paper on ink), never red. Light and dark
- * follow Windows; text keeps 4.5:1 contrast. No glows, gradients or see-through blur.
+ * The kamon brand (@yusai/kamon-react, imported in main.tsx): a warm grey ground, ink, and one
+ * colour, Chidori's 朱 (`--accent`). The accent marks what you can act on, what is selected, and
+ * the voice you hear: 相手's line and name. 自分 is ink. Errors and warnings are the brand's brick
+ * and ochre, always with words. Light and dark come from the tokens. Every value below points at
+ * a token; the --kk-* names are the app's own roles for them.
  */
 :root {
-  color-scheme: light dark;
-  --kk-bg: #ffffff;
-  --kk-surface: #ffffff;
-  --kk-surface-2: #f4f4f5;
-  --kk-surface-3: #eaeaec;
-  --kk-border: #e3e3e6;
-  --kk-border-strong: #c9c9ce;
-  --kk-text: #121214;
-  --kk-muted: #66666d;
-  /* Decoration only (hints on an empty page), never text that must be read. */
-  --kk-faint: #a3a3aa;
-  /* The everyday accent is ink: selection, primary buttons, focus. */
-  --kk-accent: #121214;
-  --kk-accent-hover: #34343a;
-  --kk-accent-fg: #ffffff;
-  --kk-accent-text: #121214;
-  --kk-accent-soft: #f4f4f5;
-  --kk-rec: #d8232a;
-  --kk-rec-strong: #d8232a;
-  --kk-rec-hover: #bc1a21;
-  --kk-rec-fg: #ffffff;
+  --kk-bg: var(--surface);
+  --kk-surface: var(--surface-raised);
+  --kk-surface-2: var(--surface-sunken);
+  --kk-surface-3: var(--border);
+  --kk-border: var(--border);
+  --kk-border-strong: var(--border-strong);
+  --kk-text: var(--ink);
+  --kk-muted: var(--ink-muted);
+  --kk-faint: var(--ink-subtle);
+  --kk-accent: var(--accent);
+  --kk-accent-hover: var(--accent-hover);
+  --kk-accent-fg: var(--on-accent);
+  --kk-accent-text: var(--accent-deep);
+  --kk-accent-soft: var(--accent-tint);
+  /* Recording: the live marks and the heard voice. */
+  --kk-rec: var(--accent);
+  --kk-rec-hover: var(--accent-hover);
+  --kk-rec-fg: var(--on-accent);
   /* Under the line: while recording, while paused, and the hint a finished session keeps. */
-  --kk-tint: #fcebec;
-  --kk-tint-pause: #f1f1f2;
-  --kk-hint: #fcf7f7;
-  /* The start dot's two rings: the red, less saturated and lighter at each step out. */
-  --kk-ring-1: #e8868a;
-  --kk-ring-2: #f4c7c8;
-  --kk-alert: #121214;
-  --kk-alert-fg: #ffffff;
-  --kk-others: #d8232a;
-  --kk-me: #121214;
-  --kk-partial: #66666d;
-  --kk-meter-bg: #e3e3e6;
-  /* Transcription far behind (FR-25): yellow, since red is the voice you hear. Dark enough on
-     white for small bold text (4.8:1). */
-  --kk-lag: #946b00;
-  --kk-shadow: 0 0% 0%;
-  --kk-shadow-strength: 1;
+  --kk-tint: var(--accent-tint);
+  --kk-tint-pause: var(--surface-sunken);
+  --kk-hint: color-mix(in srgb, var(--accent-tint) 45%, var(--surface));
+  --kk-others: var(--accent);
+  --kk-me: var(--ink);
+  --kk-partial: var(--ink-subtle);
+  --kk-meter-bg: var(--border);
+  /* Transcription far behind (FR-25). */
+  --kk-lag: var(--warning);
   --kk-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* Project colours (FR-64): small squares only, muted, and never red. */
-  --kk-p-slate: #7a7a84;
-  --kk-p-blue: #3d6fd1;
-  --kk-p-teal: #17867f;
-  --kk-p-green: #4a8a3c;
-  --kk-p-amber: #b47a1c;
-  --kk-p-violet: #7b5bd0;
-  --kk-p-brown: #8d6748;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --kk-bg: #19191b;
-    --kk-surface: #1f1f22;
-    --kk-surface-2: #26262a;
-    --kk-surface-3: #2e2e33;
-    --kk-border: #2c2c31;
-    --kk-border-strong: #4b4b52;
-    --kk-text: #ededef;
-    --kk-muted: #a2a2a9;
-    --kk-faint: #63636b;
-    --kk-accent: #ededef;
-    --kk-accent-hover: #d4d4d8;
-    --kk-accent-fg: #19191b;
-    --kk-accent-text: #ededef;
-    --kk-accent-soft: #26262a;
-    /* A true red that still reads on near-black (5:1 for 相手's name). */
-    --kk-rec: #ff3b3f;
-    --kk-rec-strong: #d8232a;
-    --kk-rec-hover: #e5373d;
-    --kk-rec-fg: #ffffff;
-    --kk-tint: #2c1718;
-    --kk-tint-pause: #222224;
-    --kk-hint: #1d191a;
-    --kk-ring-1: #8c3236;
-    --kk-ring-2: #48262a;
-    --kk-alert: #ededef;
-    --kk-alert-fg: #19191b;
-    --kk-others: #ff3b3f;
-    --kk-me: #ededef;
-    --kk-partial: #a2a2a9;
-    --kk-meter-bg: #2c2c31;
-    --kk-lag: #f5c400;
-    --kk-shadow: 0 0% 0%;
-    --kk-shadow-strength: 3;
-    --kk-p-slate: #9a9aa3;
-    --kk-p-blue: #6d9bff;
-    --kk-p-teal: #3fbfb5;
-    --kk-p-green: #73bf62;
-    --kk-p-amber: #e0a845;
-    --kk-p-violet: #a68cff;
-    --kk-p-brown: #b78e6b;
-  }
+  /* Project colours (FR-64): small squares only, from the brand's palette, never the accent. */
+  --kk-p-slate: var(--ink-subtle);
+  --kk-p-blue: var(--ai);
+  --kk-p-teal: var(--tetsu);
+  --kk-p-green: var(--moss);
+  --kk-p-amber: var(--warning);
+  --kk-p-violet: var(--budo);
+  --kk-p-brown: var(--blush);
 }
 
 @theme inline {
@@ -117,16 +66,18 @@
   --color-accent-text: var(--kk-accent-text);
   --color-accent-soft: var(--kk-accent-soft);
   --color-rec: var(--kk-rec);
-  --color-rec-strong: var(--kk-rec-strong);
   --color-rec-hover: var(--kk-rec-hover);
   --color-rec-fg: var(--kk-rec-fg);
   --color-tint: var(--kk-tint);
-  --color-alert: var(--kk-alert);
-  --color-alert-fg: var(--kk-alert-fg);
-  /* Levels of a notice speak through their icon and words, not through red. */
-  --color-warn: var(--kk-text);
-  --color-err: var(--kk-text);
-  --color-ok: var(--kk-text);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-success: var(--success);
+  /* Levels of a notice speak through their icon and words as well as colour. */
+  --color-warn: var(--warning);
+  --color-err: var(--danger);
+  --color-ok: var(--success);
   --color-ok-bg: var(--kk-surface-2);
   --color-info-bg: var(--kk-surface-2);
   --color-others: var(--kk-others);
@@ -134,22 +85,20 @@
   --color-partial: var(--kk-partial);
   --color-meter: var(--kk-meter-bg);
   --color-lag: var(--kk-lag);
-  --font-sans: "Yu Gothic UI", "Segoe UI Variable Text", "Segoe UI", "Meiryo", sans-serif;
-  --font-num: "Segoe UI Variable Display", "Segoe UI", "Yu Gothic UI", sans-serif;
 
-  --shadow-xs: 0 1px 2px hsl(var(--kk-shadow) / calc(0.05 * var(--kk-shadow-strength)));
-  --shadow-card: 0 1px 2px hsl(var(--kk-shadow) / calc(0.05 * var(--kk-shadow-strength))),
-    0 1px 3px hsl(var(--kk-shadow) / calc(0.03 * var(--kk-shadow-strength)));
-  --shadow-float: 0 12px 28px -12px hsl(var(--kk-shadow) / calc(0.16 * var(--kk-shadow-strength))),
-    0 1px 3px hsl(var(--kk-shadow) / calc(0.05 * var(--kk-shadow-strength)));
+  /* The brand has no shadows except on what floats over content. */
+  --shadow-xs: none;
+  --shadow-card: none;
+  --shadow-float: var(--shadow-float);
 
   --ease-out-soft: var(--kk-ease);
 
-  --animate-fade-up: kk-fade-up 360ms var(--kk-ease) both;
-  --animate-fade-in: kk-fade-in 220ms ease-out both;
-  --animate-pop: kk-pop 220ms var(--kk-ease) both;
-  --animate-slide-down: kk-slide-down 260ms var(--kk-ease) both;
-  --animate-settle: kk-settle 600ms ease-out both;
+  /* Motion is short and only because something changed. */
+  --animate-fade-up: kk-fade-up 200ms var(--kk-ease) both;
+  --animate-fade-in: kk-fade-in 150ms ease-out both;
+  --animate-pop: kk-pop 180ms var(--kk-ease) both;
+  --animate-slide-down: kk-slide-down 200ms var(--kk-ease) both;
+  --animate-settle: kk-settle 200ms ease-out both;
 }
 
 @keyframes kk-fade-up {
@@ -197,8 +146,8 @@
   }
 
   body {
-    font-family: var(--font-sans);
-    font-size: 13px;
+    /* The windows are small (420 px), so the UI's own text is body-small; the transcript is body. */
+    font: var(--text-body-small);
     background: var(--kk-bg);
     color: var(--kk-text);
     user-select: none;
@@ -209,9 +158,9 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--kk-text);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   }
 }
 
@@ -222,9 +171,24 @@
   }
 
   .num {
-    font-family: var(--font-num);
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* A destructive confirmation: the primary's shape in the brand's brick, with its words. */
+.button-danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
+}
+.button-danger:hover {
+  border-color: var(--danger);
+  background: var(--danger);
+  filter: brightness(0.92);
+}
+.button-danger::after {
+  border-color: var(--surface);
 }
 
 /* ---------- The line (Deck): the start dot, the pen and the whole session ---------- */
@@ -362,46 +326,37 @@
   height: 38px;
 }
 
-/* The start dot's target, and 開始: on the dot (drawn with it) or, compact, on the line beside it. */
+/*
+ * 開始, the view's primary button (ui.css `.button-primary`, with the kamon's inner line): in the
+ * middle of the free space before a recording, or, compact, on the empty line's left end where
+ * the pen will start. It fades as the pen comes in.
+ */
 .kk-go {
   position: absolute;
-  left: calc(var(--kk-dx) - var(--kk-dot) - 10px);
-  top: calc(var(--kk-sb) - var(--kk-dot) - 10px);
-  width: calc(2 * var(--kk-dot) + 20px);
-  height: calc(2 * var(--kk-dot) + 20px);
-  border-radius: 9999px;
+  left: var(--kk-dx);
+  top: var(--kk-sb);
+  transform: translateY(-50%);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    opacity 150ms;
 }
 .kk-deck-grow .kk-go {
-  left: calc(50% - var(--kk-dot) - 10px);
-  top: calc(var(--kk-rest) - var(--kk-dot) - 10px);
+  left: 50%;
+  top: var(--kk-rest);
+  transform: translate(-50%, -50%);
+  padding: var(--space-3) var(--space-8);
+}
+.kk-deck-compact .kk-go {
+  padding: var(--space-1) var(--space-4);
+  font: var(--text-label);
 }
 .kk-go:disabled {
   cursor: default;
 }
-.kk-go:focus-visible {
-  outline-offset: -6px;
-  border-radius: 9999px;
-}
-/* The start dot's rings: each a bit bigger and a bit paler than the one inside it. */
-.kk-ring-1 {
-  fill: var(--kk-ring-1);
-}
-.kk-ring-2 {
-  fill: var(--kk-ring-2);
-}
-.kk-deck:has(.kk-go:disabled) .kk-ring-1,
-.kk-deck:has(.kk-go:disabled) .kk-ring-2 {
-  opacity: 0.5;
-}
-.kk-line-label {
-  fill: var(--kk-bg);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  pointer-events: none;
-}
 .kk-deck[data-moving] .kk-go {
   pointer-events: none;
+  opacity: 0;
 }
 .kk-deck[data-moving] .kk-go-under,
 .kk-deck[data-moving] .kk-go-foot {
@@ -423,22 +378,13 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--kk-rest) + var(--kk-ring) + 12px);
+  top: calc(var(--kk-rest) + var(--space-8) + var(--space-2));
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   color: var(--kk-muted);
-}
-.kk-go-label {
-  position: absolute;
-  left: calc(var(--kk-dx) + var(--kk-dot) + 12px);
-  bottom: calc(100% - var(--kk-sb) + 4px);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1;
-  pointer-events: none;
 }
 .kk-go-hint {
   position: absolute;
@@ -485,8 +431,8 @@
   width: 16px;
 }
 .kk-timer {
-  font-size: 30px;
-  font-weight: 300;
+  font-size: 26px;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.01em;
   transition: color 0.3s ease;

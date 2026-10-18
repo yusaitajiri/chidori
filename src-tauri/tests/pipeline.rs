@@ -7,12 +7,12 @@
 //!   cargo test --release --test pipeline -- --ignored --nocapture --test-threads 1
 //!
 //! Environment:
-//!   KIKITORI_TEST_MODEL    model file (default: base-q5 in %LOCALAPPDATA%\dev.yusai.kikitori\models)
-//!   KIKITORI_TEST_SPEED    playback speed; 1 = real time (default), needed for latency figures
-//!   KIKITORI_TEST_CPU=1    force CPU
-//!   KIKITORI_ASSERT_LATENCY=1  also assert the section 16 latency targets (reference GPU machine)
-//!   KIKITORI_CER_MARGIN    allowed streaming-vs-one-pass CER gap (default 0.03, section 18)
-//!   KIKITORI_REQUIRE_FIXTURES=1  fail instead of skipping when the model or fixtures are missing
+//!   CHIDORI_TEST_MODEL    model file (default: base-q5 in %LOCALAPPDATA%\dev.yusai.chidori\models)
+//!   CHIDORI_TEST_SPEED    playback speed; 1 = real time (default), needed for latency figures
+//!   CHIDORI_TEST_CPU=1    force CPU
+//!   CHIDORI_ASSERT_LATENCY=1  also assert the section 16 latency targets (reference GPU machine)
+//!   CHIDORI_CER_MARGIN    allowed streaming-vs-one-pass CER gap (default 0.03, section 18)
+//!   CHIDORI_REQUIRE_FIXTURES=1  fail instead of skipping when the model or fixtures are missing
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -21,22 +21,22 @@ use std::time::{Duration, Instant};
 use parking_lot::Mutex;
 use unicode_normalization::UnicodeNormalization;
 
-use kikitori_lib::asr::engine::Engine;
-use kikitori_lib::asr::oneshot;
-use kikitori_lib::asr::params::{self, DecodeOptions};
-use kikitori_lib::asr::worker::{
+use chidori_lib::asr::engine::Engine;
+use chidori_lib::asr::oneshot;
+use chidori_lib::asr::params::{self, DecodeOptions};
+use chidori_lib::asr::worker::{
     AsrConfig, AsrWorker, EngineStatus, FinalResult, ModelSpec, SegmentSink, SessionCtx, WorkerHost,
 };
-use kikitori_lib::audio::dsp::{self, DspParams, JobSink, Levels, SessionIds};
-use kikitori_lib::audio::file_source::{FileSource, read_wav};
-use kikitori_lib::audio::source::AudioSource;
-use kikitori_lib::events::EventSink;
-use kikitori_lib::platform;
-use kikitori_lib::segmenter::SegmenterConfig;
-use kikitori_lib::session::log::{LogEvent, SessionLog};
-use kikitori_lib::session::model::{ModelRef, Session, SourceId, SourceInfo};
-use kikitori_lib::session::store::SessionStore;
-use kikitori_lib::settings::Language;
+use chidori_lib::audio::dsp::{self, DspParams, JobSink, Levels, SessionIds};
+use chidori_lib::audio::file_source::{FileSource, read_wav};
+use chidori_lib::audio::source::AudioSource;
+use chidori_lib::events::EventSink;
+use chidori_lib::platform;
+use chidori_lib::segmenter::SegmenterConfig;
+use chidori_lib::session::log::{LogEvent, SessionLog};
+use chidori_lib::session::model::{ModelRef, Session, SourceId, SourceInfo};
+use chidori_lib::session::store::SessionStore;
+use chidori_lib::settings::Language;
 
 struct NullHost;
 impl WorkerHost for NullHost {
@@ -87,20 +87,20 @@ fn fixtures() -> PathBuf {
 }
 
 fn model_path() -> PathBuf {
-    std::env::var("KIKITORI_TEST_MODEL").map(PathBuf::from).unwrap_or_else(|_| {
+    std::env::var("CHIDORI_TEST_MODEL").map(PathBuf::from).unwrap_or_else(|_| {
         PathBuf::from(std::env::var("LOCALAPPDATA").unwrap_or_default())
-            .join("dev.yusai.kikitori")
+            .join("dev.yusai.chidori")
             .join("models")
             .join("ggml-base-q5_1.bin")
     })
 }
 
 fn speed() -> f32 {
-    std::env::var("KIKITORI_TEST_SPEED").ok().and_then(|s| s.parse().ok()).unwrap_or(1.0)
+    std::env::var("CHIDORI_TEST_SPEED").ok().and_then(|s| s.parse().ok()).unwrap_or(1.0)
 }
 
 fn use_gpu() -> bool {
-    std::env::var("KIKITORI_TEST_CPU").as_deref() != Ok("1")
+    std::env::var("CHIDORI_TEST_CPU").as_deref() != Ok("1")
 }
 
 /// NFKC, punctuation and whitespace removed.
@@ -259,7 +259,7 @@ fn text_of(session: &Session, source: SourceId, until_ms: Option<u64>) -> String
         .ordered()
         .into_iter()
         .filter_map(|i| match i {
-            kikitori_lib::session::model::TimelineItem::Segment(s)
+            chidori_lib::session::model::TimelineItem::Segment(s)
                 if s.source == source && until_ms.is_none_or(|u| s.t_start_ms < u) =>
             {
                 Some(s.text.as_str())
@@ -274,11 +274,11 @@ fn setup() -> Option<(Arc<AsrWorker>, Engine)> {
     let model = model_path();
     if !model.exists() || !fixtures().join("meeting.wav").exists() {
         let msg = format!("need {} and generated fixtures (uv run tests/fixtures/build_fixtures.py)", model.display());
-        assert!(std::env::var("KIKITORI_REQUIRE_FIXTURES").as_deref() != Ok("1"), "{msg}");
+        assert!(std::env::var("CHIDORI_REQUIRE_FIXTURES").as_deref() != Ok("1"), "{msg}");
         eprintln!("skipping: {msg}");
         return None;
     }
-    kikitori_lib::asr::engine::disable_vulkan_implicit_layers();
+    chidori_lib::asr::engine::disable_vulkan_implicit_layers();
     let worker = AsrWorker::spawn(Arc::new(NullHost));
     worker.load_model(ModelSpec { path: model.clone(), model_id: "test".into(), try_gpu: use_gpu() });
     std::thread::sleep(Duration::from_millis(100));
@@ -317,12 +317,12 @@ fn meeting_streaming_matches_one_pass() {
     eprintln!("latency end-of-utterance → text: p50 {p50} ms, p95 {p95} ms over {} utterances", run.latencies.len());
     eprintln!("streamed: {streamed}");
 
-    let margin: f64 = std::env::var("KIKITORI_CER_MARGIN").ok().and_then(|s| s.parse().ok()).unwrap_or(0.03);
+    let margin: f64 = std::env::var("CHIDORI_CER_MARGIN").ok().and_then(|s| s.parse().ok()).unwrap_or(0.03);
     assert!(
         stream_cer <= base_cer + margin,
         "streaming CER {stream_cer:.3} more than {margin} worse than one-pass {base_cer:.3}"
     );
-    if std::env::var("KIKITORI_ASSERT_LATENCY").as_deref() == Ok("1") && speed() == 1.0 {
+    if std::env::var("CHIDORI_ASSERT_LATENCY").as_deref() == Ok("1") && speed() == 1.0 {
         assert!(p50 <= 2000 && p95 <= 4000, "latency p50 {p50} ms / p95 {p95} ms misses the section 16 targets");
     }
     worker.shutdown();
@@ -353,7 +353,7 @@ fn two_channel_labels_and_echo_guard() {
 
     // Show what survived, next to the 相手 lines around it.
     for item in run.session.ordered() {
-        if let kikitori_lib::session::model::TimelineItem::Segment(seg) = item
+        if let chidori_lib::session::model::TimelineItem::Segment(seg) = item
             && seg.t_start_ms < 106_000
         {
             eprintln!("{:>7}-{:>7} {:?}: {}", seg.t_start_ms, seg.t_end_ms, seg.source, seg.text);
@@ -378,7 +378,7 @@ fn english_is_not_translated_while_japanese_is_set() {
     let wav = fixtures().join("english.wav");
     if !wav.exists() {
         let msg = format!("need {} (uv run tests/fixtures/build_fixtures.py)", wav.display());
-        assert!(std::env::var("KIKITORI_REQUIRE_FIXTURES").as_deref() != Ok("1"), "{msg}");
+        assert!(std::env::var("CHIDORI_REQUIRE_FIXTURES").as_deref() != Ok("1"), "{msg}");
         eprintln!("skipping: {msg}");
         return;
     }

@@ -50,7 +50,7 @@ pub fn front_matter(session: &Session, meta: &MarkdownMeta) -> String {
         hms(session.duration_ms),
         sources.join(", "),
         yaml_scalar(&session.model.id),
-        yaml_scalar(&format!("Kikitori {}", meta.app_version)),
+        yaml_scalar(&format!("Chidori {}", meta.app_version)),
     )
 }
 
@@ -172,8 +172,8 @@ fn yaml_flow_item(s: &str) -> String {
 
 /// Where to write so a transcript the user edited is never overwritten (section 11).
 ///
-/// `written` maps file names Kikitori wrote to their SHA-256. The first candidate that does
-/// not exist, or still has the hash Kikitori last wrote, wins.
+/// `written` maps file names Chidori wrote to their SHA-256. The first candidate that does
+/// not exist, or still has the hash Chidori last wrote, wins.
 pub fn choose_output_path(folder: &Path, base: &str, written: &BTreeMap<String, String>) -> PathBuf {
     let (stem, ext) = base.rsplit_once('.').unwrap_or((base, ""));
     for n in 1u32.. {

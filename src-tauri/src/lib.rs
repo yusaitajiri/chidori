@@ -1,4 +1,4 @@
-//! Kikitori: live transcription with local Whisper.
+//! Chidori: live transcription with local Whisper.
 
 pub mod asr;
 pub mod audio;
@@ -8,6 +8,7 @@ pub mod events;
 pub mod export;
 pub mod hotkeys;
 pub mod mic_test;
+pub mod migrate;
 pub mod models;
 pub mod net;
 pub mod platform;
@@ -33,7 +34,7 @@ use crate::state::{AppHost, AppState};
 fn log_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
     tauri_plugin_log::Builder::new()
         .targets([
-            Target::new(TargetKind::LogDir { file_name: Some("kikitori".into()) }),
+            Target::new(TargetKind::LogDir { file_name: Some("chidori".into()) }),
             Target::new(TargetKind::Stdout),
         ])
         .rotation_strategy(RotationStrategy::KeepSome(5))
@@ -52,6 +53,8 @@ pub fn run() {
     // Before anything touches Vulkan (section 8).
     asr::engine::disable_vulkan_implicit_layers();
     net::ensure_crypto_provider();
+    // Before the plugins below open their files in the app's folders.
+    let migrated = migrate::app_folders();
 
     tauri::Builder::default()
         // Must be first so a second launch focuses the running window (FR-91).
@@ -69,16 +72,19 @@ pub fn run() {
                 .with_state_flags(tauri_plugin_window_state::StateFlags::POSITION)
                 .build(),
         )
-        .setup(|app| {
+        .setup(move |app| {
             let handle = app.handle().clone();
             whisper_rs::install_logging_hooks();
             log_panics(&handle);
             tracing::info!(
-                "Kikitori {} starting (Windows build {}, GPU backend compiled: {})",
+                "Chidori {} starting (Windows build {}, GPU backend compiled: {})",
                 app.package_info().version,
                 platform::os_build(),
                 asr::engine::gpu_compiled()
             );
+            for line in &migrated {
+                tracing::info!("{line}");
+            }
 
             updater::init(&handle)?;
 
@@ -182,7 +188,7 @@ pub fn run() {
             commands::pick_model_file,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Kikitori")
+        .expect("error while building Chidori")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
                 let st = app.state::<AppState>();

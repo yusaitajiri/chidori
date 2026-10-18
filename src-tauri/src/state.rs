@@ -1,7 +1,7 @@
 //! Process-wide state shared by commands, the tray, hotkeys and worker threads.
 
 use std::collections::{BTreeMap, HashMap};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Instant;
@@ -44,13 +44,18 @@ impl AppState {
         let paths = app.path();
         let models_dir =
             paths.app_local_data_dir().map(|d| d.join("models")).unwrap_or_else(|_| PathBuf::from("models"));
-        let default_output_root = paths
-            .document_dir()
-            .map(|d| d.join("Kikitori"))
-            .unwrap_or_else(|_| PathBuf::from("Kikitori"))
-            .to_string_lossy()
-            .into_owned();
-        let settings = load_settings(app, &default_output_root);
+        let documents = paths.document_dir().unwrap_or_default();
+        let default_output_root = documents.join("Chidori").to_string_lossy().into_owned();
+        let mut settings = load_settings(app, &default_output_root);
+        let old_default = documents.join(crate::migrate::OLD_OUTPUT_FOLDER);
+        if let Some(root) =
+            crate::migrate::output_root(&settings.output.root, &old_default, Path::new(&default_output_root))
+        {
+            settings.output.root = root;
+            if let Err(e) = save_settings(app, &settings) {
+                tracing::warn!("saving the moved output folder failed: {e}");
+            }
+        }
         let internal = load_internal(app);
         Self {
             settings: RwLock::new(settings),

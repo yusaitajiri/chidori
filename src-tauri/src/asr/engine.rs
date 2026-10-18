@@ -42,9 +42,9 @@ pub fn gpu_device_name() -> Option<String> {
 }
 
 /// Before anything touches Vulkan: disable implicit layers (OBS, Steam overlays) that are
-/// known to crash ggml, unless `KIKITORI_KEEP_VK_LAYERS=1`.
+/// known to crash ggml, unless `CHIDORI_KEEP_VK_LAYERS=1`.
 pub fn disable_vulkan_implicit_layers() {
-    if std::env::var("KIKITORI_KEEP_VK_LAYERS").as_deref() != Ok("1") {
+    if std::env::var("CHIDORI_KEEP_VK_LAYERS").as_deref() != Ok("1") {
         // SAFETY: called at process start before any other thread exists.
         unsafe { std::env::set_var("VK_LOADER_LAYERS_DISABLE", "~implicit~") };
     }

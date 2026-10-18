@@ -1,19 +1,23 @@
 <h1>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/kikitori-logo-dark.svg">
-    <img src="docs/images/kikitori-logo.svg" alt="Kikitori" width="280">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/chidori-on-dark.svg">
+    <img src="docs/images/chidori.svg" alt="" width="72">
   </picture>
+  <br>
+  Chidori — Transcription
 </h1>
 
 [日本語](README.md) · **English**
 
-Kikitori is a Windows app that transcribes meetings, lectures and videos as they happen, **entirely on your PC**.
+Chidori was called Kikitori before. Updating from Kikitori keeps your settings, models and recordings.
+
+Chidori is a Windows app that transcribes meetings, lectures and videos as they happen, **entirely on your PC**.
 It tells an app's audio (Zoom, Teams and so on) apart from your microphone, labelling the lines Others and Me, and drops screenshots into the transcript at the moment you take them.
 Afterwards, save it as Markdown or PDF, or use Copy for AI agents to ask an AI for a summary.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/screenshot-dark.png">
-  <img src="docs/images/screenshot.png" alt="Kikitori while recording, in Japanese: the expanded window on the left and the compact one on the right. Lines from the other side (相手) and from you (自分), a screenshot of a shared slide, and words still being spoken in grey; the red line along the bottom is drawn from the live sound.">
+  <img src="docs/images/screenshot.png" alt="Chidori while recording, in Japanese: the expanded window on the left and the compact one on the right. Lines from the other side (相手) and from you (自分); the line along the bottom is drawn from the live sound.">
 </picture>
 
 - Your audio never goes to the internet: transcription runs on your PC with Whisper.
@@ -23,11 +27,11 @@ Afterwards, save it as Markdown or PDF, or use Copy for AI agents to ask an AI f
 
 ## Install
 
-1. Download `Kikitori_x.y.z_x64-setup.exe` from [Releases](../../releases/latest).
+1. Download `Chidori_x.y.z_x64-setup.exe` from [Releases](../../releases/latest).
    - If your browser warns that the file isn't commonly downloaded, choose **Keep** from its "…" menu.
 2. Open the downloaded file.
 3. If a blue "**Windows protected your PC**" screen appears, click **More info**, then **Run anyway**.
-   - It appears because the installer isn't code-signed yet. Kikitori just lacks a signature: it doesn't change your PC's settings or ask for administrator rights.
+   - It appears because the installer isn't code-signed yet. Chidori just lacks a signature: it doesn't change your PC's settings or ask for administrator rights.
 4. Follow the installer. No administrator rights are needed (it installs for your user only).
 
 ## First run
@@ -57,11 +61,11 @@ To change the app's language later: Settings → General → Language. If your m
 | Add to a recording you stopped | **Continue recording** in its ⋯ menu (or History's ⋯); the new part follows the old one |
 | Group recordings into projects | Pick a project from the square beside a recording's title, a finished recording's header, or History's ⋯ and **Select**. History filters by project; **Settings → Projects** renames and recolours them |
 
-- Recordings are saved automatically in `Documents\Kikitori`, one folder per recording named by date and title (`transcript.md` and images).
+- Recordings are saved automatically in `Documents\Chidori`, one folder per recording named by date and title (`transcript.md` and images).
 - Exports and copies are in Japanese whatever the app's language: lines are labelled 相手 (Others) and 自分 (Me).
 - Through speakers, your mic may pick up the other side's voice. Headphones work best (duplicate lines are removed automatically).
 - Start/Stop, Screenshot, the important mark and the cut can get keys that work from any app: Settings → Hotkeys (off at first).
-- On a PC without a usable GPU, Kikitori runs on the CPU. If it feels slow, choose **Lightweight** in Settings → Models. Once transcription is a minute behind, **After Stop** pauses it while you record, to keep the PC light, and catches up when you stop.
+- On a PC without a usable GPU, Chidori runs on the CPU. If it feels slow, choose **Lightweight** in Settings → Models. Once transcription is a minute behind, **After Stop** pauses it while you record, to keep the PC light, and catches up when you stop.
 
 ## Privacy
 
@@ -74,7 +78,7 @@ To change the app's language later: Settings → General → Language. If your m
 - **The app's sound isn't recorded**: switch the source to All system audio (an app that isn't playing anything can't be recorded on its own).
 - **Shortcuts don't work**: Windows doesn't deliver them while an app running as administrator is in front.
 - **Logs**: **Open logs** at the bottom of Settings. Logs never contain transcript text.
-- **Uninstall**: Windows Settings → Apps → Installed apps → Kikitori. Your recordings (`Documents\Kikitori`) stay.
+- **Uninstall**: Windows Settings → Apps → Installed apps → Chidori. Your recordings (`Documents\Chidori`) stay.
 
 ---
 
@@ -107,13 +111,13 @@ The integration harness (streaming accuracy and latency against fixture recordin
 pnpm build:gpu
 ```
 
-This builds the Vulkan release, downloads the Khronos Vulkan loader (pinned SHA-256) and bundles it next to the exe, collects the licences of every bundled crate and package into `licenses\THIRD-PARTY-NOTICES.txt`, and writes `Kikitori_<version>_x64-setup.exe` under `%USERPROFILE%\.kt\release\bundle\nsis\`.
+This builds the Vulkan release, downloads the Khronos Vulkan loader (pinned SHA-256) and bundles it next to the exe, collects the licences of every bundled crate and package into `licenses\THIRD-PARTY-NOTICES.txt`, and writes `Chidori_<version>_x64-setup.exe` under `%USERPROFILE%\.kt\release\bundle\nsis\`.
 
 ### Releasing
 
 One-time setup (the update check stays off until this is done):
 
-1. Push this repository to GitHub as a **public** repository named `kikitori` (updates are downloaded from its releases without a token).
+1. Push this repository to GitHub as a **public** repository named `chidori` (updates are downloaded from its releases without a token).
 2. Generate the updater keys and choose a password. In PowerShell: `npm run tauri signer generate -- -w "$env:USERPROFILE\.tauri\kikitori.key"` (give a full path: the Tauri CLI does not expand `~`).
 3. Run `node scripts/enable-updater.mjs <your-github-user>` and commit the change to `src-tauri/tauri.conf.json`.
 4. In the repository settings, add the Actions secrets `TAURI_SIGNING_PRIVATE_KEY` (the contents of `kikitori.key`) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Keep the key and its password safe: without them, installed copies can't be updated.

@@ -1,4 +1,4 @@
-// Writes the licence texts of everything the installer ships besides Kikitori's own code: the
+// Writes the licence texts of everything the installer ships besides Chidori's own code: the
 // Rust crates linked into the exe, the whisper.cpp sources built from whisper-rs-sys, libopus
 // built from opusic-sys, and the frontend packages Vite bundles. MIT, BSD and Apache-2.0 ask for their notices to travel with
 // the binary. Typst's LICENSE and NOTICE and the Vulkan loader's licence ship as their own files
@@ -164,10 +164,10 @@ function section(title, entries) {
 
 export function thirdPartyNotices() {
   const crates = rustCrates();
-  const header = `Third-party software in Kikitori
+  const header = `Third-party software in Chidori
 ================================
 
-Kikitori itself is under the MIT licence. Its installer also contains the software below; each
+Chidori itself is under the MIT licence. Its installer also contains the software below; each
 licence text is followed by the packages it covers. Typst's licence and NOTICE and the Vulkan
 loader's licence are the other files in this folder.`;
   return [

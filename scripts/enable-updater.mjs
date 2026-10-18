@@ -27,13 +27,13 @@ conf.plugins = {
   ...conf.plugins,
   updater: {
     pubkey,
-    endpoints: [`https://github.com/${owner}/kikitori/releases/latest/download/latest.json`],
+    endpoints: [`https://github.com/${owner}/chidori/releases/latest/download/latest.json`],
     windows: { installMode: "passive" },
   },
 };
 writeFileSync(confPath, JSON.stringify(conf, null, 2) + "\n");
 
-console.log(`Updater enabled in ${confPath} for github.com/${owner}/kikitori.
+console.log(`Updater enabled in ${confPath} for github.com/${owner}/chidori.
 Next:
   1. In the GitHub repository, Settings → Secrets and variables → Actions, add
      TAURI_SIGNING_PRIVATE_KEY           the contents of ${pubPath.replace(/\.pub$/, "")}

@@ -68,13 +68,13 @@ function useFresh(id: string): boolean {
   return store((s) => !!s.fresh[id]);
 }
 
-/** A turn's first line: the speaker's name in the colour of their side of the line (相手 red, 自分 ink), then the time. */
+/** A turn's first line: the speaker's name in the colour of their side of the line (相手 in the accent, 自分 ink), then the time. */
 function TurnHead({ source, time, twoSpeakers }: { source: SourceId; time: string; twoSpeakers: boolean }) {
   const { t } = useTranslation();
   const me = source === "mic";
   return (
     <div className="mb-0.5 flex items-baseline gap-2 text-[11.5px]">
-      {twoSpeakers && <span className={`font-bold ${me ? "text-me" : "text-others"}`}>{me ? t("me") : t("others")}</span>}
+      {twoSpeakers && <span className={`font-medium ${me ? "text-me" : "text-others"}`}>{me ? t("me") : t("others")}</span>}
       <span className="num text-[11px] text-muted">{time}</span>
     </div>
   );
@@ -82,13 +82,13 @@ function TurnHead({ source, time, twoSpeakers }: { source: SourceId; time: strin
 
 function RowActions({ children }: { children: ReactNode }) {
   return (
-    <span className="absolute top-1 right-2 z-10 flex gap-0.5 rounded-lg border border-line bg-surface p-0.5 opacity-0 shadow-card transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">
+    <span className="absolute top-1 right-2 z-10 flex gap-0.5 rounded-md border border-line bg-surface p-0.5 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">
       {children}
     </span>
   );
 }
 
-const actionClass = "grid size-6 place-items-center rounded-md text-muted transition-colors hover:bg-surface-2 hover:text-fg";
+const actionClass = "grid size-6 place-items-center rounded-sm text-muted transition-colors hover:bg-surface-2 hover:text-fg";
 
 function SegmentRow({ seg, head, clock, twoSpeakers, editable, playable }: { seg: Segment; head: boolean; clock?: Clock; twoSpeakers: boolean; editable: boolean; playable: boolean }) {
   const { t } = useTranslation();
@@ -134,7 +134,7 @@ function SegmentRow({ seg, head, clock, twoSpeakers, editable, playable }: { seg
         <div className="space-y-1.5 py-1">
           <textarea
             aria-label={t("editLine")}
-            className="selectable min-h-[64px] w-full resize-y rounded-xl border border-accent bg-surface p-2 text-[14px] leading-relaxed focus:outline-none"
+            className="selectable min-h-[64px] w-full resize-y frame rounded-lg bg-surface p-3 text-[16px] leading-[27px] focus:outline-none"
             value={draft}
             autoFocus
             onChange={(e) => setDraft(e.target.value)}
@@ -155,7 +155,7 @@ function SegmentRow({ seg, head, clock, twoSpeakers, editable, playable }: { seg
           </div>
         </div>
       ) : (
-        <p className={`selectable relative text-[14px] leading-[1.8] break-words ${seg.important ? "font-semibold" : ""} ${fresh ? "animate-settle" : ""}`}>
+        <p className={`selectable relative text-[16px] leading-[27px] break-words ${seg.important ? "font-medium" : ""} ${fresh ? "animate-settle" : ""}`}>
           {/* An important line: an ink stroke in the margin beside it, and bolder text. */}
           {seg.important && <span className="absolute inset-y-[0.4em] -left-[11px] w-[3px] rounded-full bg-fg" aria-hidden />}
           {seg.important && <span className="sr-only">{t("important")}: </span>}
@@ -245,12 +245,12 @@ function ScreenshotRow({ shot, clock, editable }: { shot: Screenshot; clock?: Cl
             aria-label={t("openImage")}
             disabled={!path}
             onClick={() => path && commands.openPath(path).catch((e) => reportError(e))}
-            className="block max-w-full overflow-hidden rounded-lg border border-line bg-surface-2 transition-colors duration-200 hover:border-line-strong"
+            className="block max-w-full overflow-hidden rounded-md border border-line bg-surface-2 transition-colors duration-200 hover:border-line-strong"
           >
             <img src={src} alt={shot.caption || t("screenshotAlt", { time })} className="max-h-[220px] w-auto max-w-full object-contain" loading="lazy" draggable={false} />
           </button>
         ) : (
-          <div className="grid h-20 w-48 place-items-center rounded-lg border border-dashed border-line text-muted">
+          <div className="grid h-20 w-48 place-items-center rounded-md border border-dashed border-line text-muted">
             <Camera size={18} />
           </div>
         )}
@@ -260,7 +260,7 @@ function ScreenshotRow({ shot, clock, editable }: { shot: Screenshot; clock?: Cl
             <input
               aria-label={t("caption")}
               placeholder={t("caption")}
-              className="h-8 min-w-0 flex-1 rounded-[10px] border border-accent bg-surface px-2.5 text-[12px] focus:outline-none"
+              className="h-8 min-w-0 flex-1 rounded-md border border-accent bg-surface px-2.5 text-[12px] focus:outline-none"
               value={caption}
               autoFocus
               onChange={(e) => setCaption(e.target.value)}
@@ -317,7 +317,7 @@ function MarkerRow({ marker, clock }: { marker: Marker; clock?: Clock }) {
   return (
     <div className={`flex items-center gap-3 px-[18px] ${cut ? "pt-6 pb-2" : "py-3"} ${fresh ? "animate-fade-up" : ""}`}>
       <span className={rule} />
-      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${cut ? "text-fg" : "text-muted"}`}>
+      <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${cut ? "text-fg" : "text-muted"}`}>
         <Icon size={11} aria-hidden />
         {text}
         {marker.type !== "unprocessed" && <span className="num font-normal">{time}</span>}
@@ -332,7 +332,7 @@ function PartialRow({ partial, head, clock, twoSpeakers }: { partial: PartialIte
   return (
     <div className={`relative px-[18px] pb-0.5 ${head ? "pt-3.5" : "pt-0.5"}`}>
       {head && <TurnHead source={partial.source} time={clock && partial.tStartMs !== undefined ? clock(partial.tStartMs) : ""} twoSpeakers={twoSpeakers} />}
-      <p className="text-[14px] leading-[1.8] break-words text-partial">{partial.text}</p>
+      <p className="text-[16px] leading-[27px] break-words text-partial">{partial.text}</p>
     </div>
   );
 }
@@ -532,7 +532,7 @@ export function Transcript({ editable, header, live }: { editable: boolean; head
             scrollToEnd(true);
           }}
           style={{ bottom: LINE_Y + 16 }}
-          className="absolute left-1/2 inline-flex -translate-x-1/2 animate-pop items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12px] font-semibold shadow-float transition-colors hover:bg-surface-2"
+          className="absolute left-1/2 inline-flex -translate-x-1/2 animate-pop items-center gap-1.5 rounded-md border border-line bg-surface px-3.5 py-1.5 text-[12px] font-medium shadow-float transition-colors hover:bg-surface-2"
         >
           <ArrowDown size={13} />
           {t("jumpLatest")}
@@ -557,7 +557,7 @@ export function TranscriptTail() {
     return <div className="truncate px-1 text-[12px] text-muted">{t("waitingForSpeech")}</div>;
   }
   const label = (source: SourceId) =>
-    twoSpeakers && <span className={`shrink-0 text-[11px] font-bold ${source === "mic" ? "text-me" : "text-others"}`}>{source === "mic" ? t("me") : t("others")}</span>;
+    twoSpeakers && <span className={`shrink-0 text-[11px] font-medium ${source === "mic" ? "text-me" : "text-others"}`}>{source === "mic" ? t("me") : t("others")}</span>;
   return (
     <div className="min-w-0 px-1" aria-live="polite">
       {tail.map((r) => {
@@ -583,7 +583,7 @@ export function TranscriptTail() {
           <div key={r.key} className="flex animate-fade-up items-baseline gap-2 text-[13px] leading-6">
             {label(item.source)}
             {item.important && <Star size={11} fill="currentColor" className="shrink-0 self-center" aria-label={t("important")} />}
-            {tailText(item.text, item.important ? "selectable font-semibold" : "selectable")}
+            {tailText(item.text, item.important ? "selectable font-medium" : "selectable")}
           </div>
         );
       })}

@@ -32,8 +32,8 @@ mod tests {
 
     #[test]
     fn substitutes_vocabulary_and_transcript() {
-        let p = cleanup_prompt(&["大澤研".into(), " Kikitori ".into()], "[15:15:58] 相手: こんにちは");
-        assert!(p.contains("- 固有名詞の候補: 大澤研、Kikitori\n---\n[15:15:58] 相手: こんにちは"));
+        let p = cleanup_prompt(&["大澤研".into(), " Chidori ".into()], "[15:15:58] 相手: こんにちは");
+        assert!(p.contains("- 固有名詞の候補: 大澤研、Chidori\n---\n[15:15:58] 相手: こんにちは"));
         assert!(p.starts_with("以下は音声認識で自動生成した文字起こしです。"));
     }
 

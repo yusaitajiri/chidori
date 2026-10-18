@@ -135,7 +135,7 @@ impl OpusFile {
         head.extend_from_slice(&0i16.to_le_bytes()); // output gain
         head.push(0); // mapping family: mono/stereo
         ogg.write_packet(head, SERIAL, PacketWriteEndInfo::EndPage, 0)?;
-        let vendor = concat!("Kikitori ", env!("CARGO_PKG_VERSION"));
+        let vendor = concat!("Chidori ", env!("CARGO_PKG_VERSION"));
         let mut tags = b"OpusTags".to_vec();
         tags.extend_from_slice(&(vendor.len() as u32).to_le_bytes());
         tags.extend_from_slice(vendor.as_bytes());

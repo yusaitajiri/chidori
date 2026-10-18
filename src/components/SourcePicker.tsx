@@ -12,7 +12,7 @@ import { IconButton, SwitchMark } from "./ui";
 
 export function AppIcon({ src, size = 20 }: { src?: string; size?: number }) {
   return src ? (
-    <img src={src} alt="" width={size} height={size} className="shrink-0 rounded-[5px]" draggable={false} />
+    <img src={src} alt="" width={size} height={size} className="shrink-0 rounded-sm" draggable={false} />
   ) : (
     <AppWindow size={size - 2} className="shrink-0 text-muted" aria-hidden />
   );
@@ -91,7 +91,7 @@ function Popover({
       role="listbox"
       aria-label={label}
       onKeyDown={onListKey}
-      className="fixed z-[60] animate-pop overflow-y-auto rounded-2xl border border-line bg-surface p-1 shadow-float"
+      className="fixed z-[60] animate-pop overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-float"
       style={{ left, width, maxHeight, ...(up ? { bottom: window.innerHeight - rect.top + 6 } : { top: rect.bottom + 6 }) }}
     >
       {children}
@@ -109,7 +109,7 @@ function Option({ selected, disabled, title, onPick, icon, label, extra }: { sel
       disabled={disabled}
       title={title}
       onClick={onPick}
-      className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none disabled:opacity-45 ${selected ? "font-semibold" : ""}`}
+      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none disabled:opacity-45 ${selected ? "font-medium" : ""}`}
     >
       <span className="grid size-5 shrink-0 place-items-center text-fg">{icon}</span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -122,7 +122,7 @@ function Option({ selected, disabled, title, onPick, icon, label, extra }: { sel
 
 function Group({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div role="presentation" className="flex items-center justify-between px-2.5 pt-2 pb-0.5 text-[11px] font-bold text-muted">
+    <div role="presentation" className="flex items-center justify-between px-2.5 pt-2 pb-0.5 text-[11px] font-medium text-muted">
       {children}
       {action}
     </div>
@@ -130,7 +130,7 @@ function Group({ children, action }: { children: ReactNode; action?: ReactNode }
 }
 
 const fieldClass = (dense: boolean, open = false) =>
-  `flex min-w-0 items-center gap-2.5 rounded-xl border bg-surface px-3 text-left transition-colors duration-150 ${dense ? "h-10" : "h-12"} ${
+  `flex min-w-0 items-center gap-2.5 rounded-lg border bg-surface px-3 text-left transition-colors duration-150 ${dense ? "h-10" : "h-12"} ${
     open ? "border-fg" : "border-line hover:border-line-strong"
   }`;
 
@@ -219,7 +219,7 @@ function SourceField({ dense }: { dense: boolean }) {
         className={`${fieldClass(dense, open)} w-full`}
       >
         <span className="grid size-[22px] shrink-0 place-items-center">{icon}</span>
-        <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold ${src.mode === "app" && !src.app ? "text-muted" : ""}`}>{name}</span>
+        <span className={`min-w-0 flex-1 truncate text-[13.5px] font-medium ${src.mode === "app" && !src.app ? "text-muted" : ""}`}>{name}</span>
         {src.mode === "app" && <AppWave pid={src.app?.rootPid} width={dense ? 30 : 36} height={dense ? 14 : 16} />}
         <ChevronDown size={15} className={`shrink-0 text-muted transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
@@ -252,7 +252,7 @@ function MicField({ dense, only }: { dense: boolean; only: boolean }) {
     <>
       <Mic size={dense ? 17 : 19} className={`shrink-0 transition-colors ${on ? "text-fg" : "text-muted"}`} aria-hidden />
       <span className="grid min-w-0 flex-1 leading-tight">
-        <span className={`truncate text-[13.5px] font-semibold transition-colors ${on ? "" : "text-muted"}`}>{only ? t("srcMic") : t("conversation")}</span>
+        <span className={`truncate text-[13.5px] font-medium transition-colors ${on ? "" : "text-muted"}`}>{only ? t("srcMic") : t("conversation")}</span>
         {!dense && <span className="truncate text-[11px] text-muted">{device}</span>}
       </span>
     </>
@@ -325,10 +325,10 @@ export function SourceSummary({ onOpen, open, className = "" }: { onOpen: () => 
       onClick={onOpen}
       aria-label={`${t("chooseSource")}: ${name}`}
       aria-expanded={open}
-      className={`flex h-10 min-w-0 items-center gap-2 rounded-[11px] border border-line bg-surface px-3 text-left transition-colors hover:border-line-strong ${className}`}
+      className={`flex h-10 min-w-0 items-center gap-2 rounded-md border border-line bg-surface px-3 text-left transition-colors hover:border-line-strong ${className}`}
     >
       <span className="grid shrink-0 place-items-center">{icon}</span>
-      <span className="min-w-0 truncate text-[13px] font-semibold">{name}</span>
+      <span className="min-w-0 truncate text-[13px] font-medium">{name}</span>
       {two && <span className="shrink-0 text-[12px] text-muted">· {t("conversationShort")}</span>}
       <span className="ml-auto flex shrink-0 items-center gap-2">
         {mode === "app" && <AppWave pid={app?.rootPid} />}
@@ -372,7 +372,7 @@ export function SourceDropdown({ className = "" }: { className?: string }) {
               role="switch"
               aria-checked={src.includeMic}
               onClick={() => src.setIncludeMic(!src.includeMic)}
-              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
             >
               <Mic size={18} className={src.includeMic ? "text-fg" : "text-muted"} aria-hidden />
               <span className="min-w-0 flex-1 truncate">{t("conversation")}</span>
@@ -400,7 +400,7 @@ export function SourcePanel({ onClose, dense = false }: { onClose: () => void; d
     <div className="fixed inset-x-0 top-10 bottom-0 z-30 animate-fade-in overflow-y-auto bg-bg px-3 pt-0.5 pb-2">
       <div className={`mx-auto w-full ${dense ? "" : "max-w-[380px] pt-2"}`}>
         <div className="mb-1 flex items-center justify-between pl-0.5">
-          <span className="text-[12px] font-semibold text-muted">{t("listenTo")}</span>
+          <span className="text-[12px] font-medium text-muted">{t("listenTo")}</span>
           <IconButton size="sm" label={t("done")} onClick={onClose} className="!text-fg">
             <Check size={16} strokeWidth={2.5} />
           </IconButton>

@@ -1,31 +1,24 @@
-// The look of a Kikitori transcript (export/typst_pdf.rs). The session follows this preamble as
+// The look of a Chidori transcript (export/typst_pdf.rs). The session follows this preamble as
 // calls to `header`, `entry`, `shot`, `note` and `cut`, its text in strings, so none of it is read as
-// markup. White paper, ink, and red for the voice you hear (相手).
+// markup. The kamon brand's light colours (tokens/tokens.json in @yusai/kamon-react) on the
+// paper itself: ink, and Chidori's 朱 for the voice you hear (相手).
 
-#let ink = rgb("#121214")
-#let muted = rgb("#66666d")
-#let red = rgb("#d8232a")
-#let hairline = rgb("#e3e3e6")
-
-// The app icon's bird, r its head's radius: a red head with a pointed tail, an ink beak and a
-// white eye. It stands on the baseline like a letter.
-#let bird(r) = box(width: 2.99 * r, height: 2 * r, {
-  place(dx: 0.5348 * r, circle(radius: r, fill: red))
-  place(polygon(fill: red, (0pt, 0.3167 * r), (1.3178 * r, 0.0238 * r), (0.6641 * r, 1.492 * r)))
-  place(polygon(fill: ink, (2.4249 * r, 1.0151 * r), (2.9902 * r, 0.6371 * r), (2.3136 * r, 0.5688 * r)))
-  place(dx: 1.8548 * r, dy: 0.56 * r, circle(radius: 0.1 * r, fill: white))
-})
+#let ink = rgb("#2A2826")
+#let muted = rgb("#5E5A53")
+#let shu = rgb("#B0501F")
+#let hairline = rgb("#DCD8CF")
+#let rule = rgb("#C2BDB2")
 
 #set page(
   paper: "a4",
   margin: (x: 18mm, top: 18mm, bottom: 20mm),
-  // The app's name, small, with its bird; the page number on the right.
+  // The app's name, small; the page number on the right.
   footer: context {
     set text(6.5pt, fill: muted)
     grid(
       columns: (1fr, 1fr),
       align: (left + horizon, right + horizon),
-      [#bird(1.7pt)#h(0.8pt) Kikitori],
+      [Chidori],
       counter(page).display("1 / 1", both: true),
     )
   },
@@ -39,7 +32,8 @@
   v(-0.3em)
   text(9pt, fill: muted, meta)
   v(0.2em)
-  line(length: 100%, stroke: 0.6pt + ink)
+  // 子持ち罫, the kamon's double line that marks the top of a printed page: thick over thin.
+  stack(spacing: 1.2pt, line(length: 100%, stroke: 1.2pt + rule), line(length: 100%, stroke: 0.6pt + rule))
   v(0.4em)
 }
 
@@ -48,7 +42,7 @@
 #let entry(time: none, label: none, me: false, important: false, body) = par({
   if important { text(fill: ink, "★") + h(0.4em) }
   if time != none { text(fill: muted, number-width: "tabular", "[" + time + "]") + h(0.4em) }
-  if label != none { text(weight: "bold", fill: if me { ink } else { red }, label) + h(0.4em) }
+  if label != none { text(weight: "bold", fill: if me { ink } else { shu }, label) + h(0.4em) }
   if important { text(weight: "bold", body) } else { body }
 })
 

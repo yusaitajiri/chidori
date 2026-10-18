@@ -136,8 +136,8 @@ mod tests {
 
     #[test]
     fn vocabulary_then_context() {
-        let p = build_prompt(&["大澤研".into(), "Kikitori".into()], Some("前の文です。"), "ja");
-        assert_eq!(p, "大澤研、Kikitori。前の文です。");
+        let p = build_prompt(&["大澤研".into(), "Chidori".into()], Some("前の文です。"), "ja");
+        assert_eq!(p, "大澤研、Chidori。前の文です。");
     }
 
     #[test]

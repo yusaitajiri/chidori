@@ -53,7 +53,7 @@ pub fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(20))
         .read_timeout(Duration::from_secs(60))
-        .user_agent(concat!("Kikitori/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("Chidori/", env!("CARGO_PKG_VERSION")))
         .build()
         .expect("http client builds")
 }

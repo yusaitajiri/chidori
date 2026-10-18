@@ -170,7 +170,7 @@ pub struct Hotkeys {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct OutputSettings {
-    /// Empty means `Documents\Kikitori`; resolved at load.
+    /// Empty means `Documents\Chidori`; resolved at load.
     pub root: String,
     pub title_template: String,
 }
@@ -450,7 +450,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    const ROOT: &str = "C:\\Users\\x\\Documents\\Kikitori";
+    const ROOT: &str = "C:\\Users\\x\\Documents\\Chidori";
 
     #[test]
     fn defaults_match_spec() {
@@ -482,7 +482,7 @@ mod tests {
             "locale": "fr",
             "window": { "alwaysOnTop": false, "layout": "huge", "extra": true },
             "vad": { "startThreshold": 0.95, "hangoverMs": 100 },
-            "vocabulary": ["大澤研", " ", "大澤研", "Kikitori"],
+            "vocabulary": ["大澤研", " ", "大澤研", "Chidori"],
             "modelId": "nope",
             "language": "auto",
             "hotkeys": { "toggle": " Ctrl+Alt+K ", "screenshot": "" }
@@ -493,7 +493,7 @@ mod tests {
         assert_eq!(s.window.layout, Layout::Compact);
         assert_eq!(s.vad.start_threshold, 0.8);
         assert_eq!(s.vad.hangover_ms, 400);
-        assert_eq!(s.vocabulary, vec!["大澤研", "Kikitori"]);
+        assert_eq!(s.vocabulary, vec!["大澤研", "Chidori"]);
         assert_eq!(s.model_id, "turbo-q5");
         assert_eq!(s.language, Language::Auto);
         assert_eq!(s.hotkeys.toggle, "Ctrl+Alt+K");

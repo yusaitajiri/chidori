@@ -1,5 +1,5 @@
 {
-  "name": "kikitori",
+  "name": "chidori",
   "private": true,
   "version": "0.3.0",
   "type": "module",
@@ -13,11 +13,15 @@
     "build:gpu": "node scripts/tauri-gpu.mjs build",
     "lint": "oxlint",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "brand-sync"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/zen-kaku-gothic-new": "5.3.1",
     "@tanstack/react-virtual": "3.14.13",
     "@tauri-apps/api": "2.12.1",
+    "@yusai/kamon-react": "github:yusaitajiri/kamon-brand#react-v2.0.0",
     "i18next": "26.4.2",
     "lucide-react": "1.49.0",
     "react": "19.3.0",

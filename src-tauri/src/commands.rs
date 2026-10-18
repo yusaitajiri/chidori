@@ -56,7 +56,7 @@ fn os_text(locale: Locale, key: &str, param: &str) -> String {
 /// A silent Windows notification (used when the window is hidden).
 pub fn os_notification(app: &AppHandle, st: &AppState, key: &str, param: &str) {
     let locale = st.settings.read().locale;
-    let result = app.notification().builder().title("Kikitori").body(os_text(locale, key, param)).silent().show();
+    let result = app.notification().builder().title("Chidori").body(os_text(locale, key, param)).silent().show();
     if let Err(e) = result {
         tracing::debug!("notification failed: {e}");
     }
@@ -540,7 +540,7 @@ pub async fn open_path(app: AppHandle, path: String) -> AppResult<()> {
     blocking(app, move |app, st| {
         let p = PathBuf::from(&path);
         if !allowed_path(app, st, &p) {
-            return Err(AppError::internal("path is outside Kikitori's folders"));
+            return Err(AppError::internal("path is outside Chidori's folders"));
         }
         app.opener().open_path(path, None::<&str>).map_err(|e| AppError::internal(e.to_string()))
     })

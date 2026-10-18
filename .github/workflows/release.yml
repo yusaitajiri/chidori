@@ -50,13 +50,13 @@ jobs:
         with:
           tauriScript: node scripts/tauri-gpu.mjs
           tagName: ${{ github.ref_name }}
-          releaseName: Kikitori ${{ github.ref_name }}
+          releaseName: Chidori ${{ github.ref_name }}
           releaseBody: |
-            Windows 10/11（64ビット）用です。下の `Kikitori_…_x64-setup.exe` をダウンロードして開いてください。
+            Windows 10/11（64ビット）用です。下の `Chidori_…_x64-setup.exe` をダウンロードして開いてください。
             「Windows によって PC が保護されました」と表示されたら、**詳細情報** → **実行** を押します（インストーラーはまだコード署名されていません）。
             使い方は [README](https://github.com/${{ github.repository }}#readme) をご覧ください。
 
-            For Windows 10/11 (64-bit). Download `Kikitori_…_x64-setup.exe` below and open it.
+            For Windows 10/11 (64-bit). Download `Chidori_…_x64-setup.exe` below and open it.
             If Windows says "Windows protected your PC", click **More info**, then **Run anyway** (the installer isn't code-signed yet).
             See the [English README](https://github.com/${{ github.repository }}/blob/main/README.en.md) for the full guide.
           releaseDraft: true

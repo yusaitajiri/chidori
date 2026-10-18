@@ -1,13 +1,13 @@
 //! Downloads a catalog model with the app's downloader:
 //! `cargo run --example download_model -- <model-id> [dest-dir]`.
 
-use kikitori_lib::models::{catalog, download};
+use chidori_lib::models::{catalog, download};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let id = std::env::args().nth(1).unwrap_or_else(|| "base-q5".into());
     let dir = std::env::args().nth(2).map(std::path::PathBuf::from).unwrap_or_else(|| {
-        std::path::PathBuf::from(std::env::var("LOCALAPPDATA").unwrap()).join("dev.yusai.kikitori").join("models")
+        std::path::PathBuf::from(std::env::var("LOCALAPPDATA").unwrap()).join("dev.yusai.chidori").join("models")
     });
     let entry = catalog::find(&id).ok_or_else(|| anyhow::anyhow!("unknown model {id}"))?;
     let req = download::DownloadRequest {

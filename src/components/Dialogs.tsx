@@ -50,8 +50,8 @@ export function RecoveryDialog() {
         </>
       }
     >
-      <div className="rounded-xl bg-surface-2 px-3 py-2.5">
-        <div className="font-semibold">{current.title}</div>
+      <div className="rounded-lg bg-surface-2 px-3 py-2.5">
+        <div className="font-medium">{current.title}</div>
         <div className="mt-0.5 text-xs text-muted">
           {dateTimeOf(current.startedAt)} · {hms(current.durationMs)} · {t("segmentsCount", { n: current.segments })}
         </div>
@@ -134,19 +134,19 @@ export function ExportDialog({ sessionId, onClose }: { sessionId: string; onClos
     >
       <div className="space-y-1.5">
         {FORMATS.map(({ kind, icon: Icon, title }) => (
-          <div key={kind} className="flex items-center rounded-xl border border-line bg-surface transition-colors hover:border-line-strong hover:bg-surface-2">
+          <div key={kind} className="flex items-center rounded-lg border border-line bg-surface transition-colors hover:border-line-strong hover:bg-surface-2">
             <button
               type="button"
               disabled={!!busy}
               onClick={() => void run(kind)}
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left disabled:pointer-events-none"
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-left disabled:pointer-events-none"
             >
               <Icon size={18} className="shrink-0 text-muted" aria-hidden />
-              <span className="min-w-0 flex-1 text-[13.5px] font-semibold">{t(title)}</span>
+              <span className="min-w-0 flex-1 text-[13.5px] font-medium">{t(title)}</span>
               {busy === kind && <Spinner />}
             </button>
             {kind === "markdown" && (
-              <label className="flex shrink-0 cursor-pointer items-center gap-2 py-2.5 pr-3 pl-1 text-[11.5px] font-semibold text-muted">
+              <label className="flex shrink-0 cursor-pointer items-center gap-2 py-2.5 pr-3 pl-1 text-[11.5px] font-medium text-muted">
                 ZIP
                 <Switch checked={zip} onChange={toggleZip} disabled={!!busy} label={t("zipToggle")} />
               </label>

@@ -1,15 +1,15 @@
 [package]
-name = "kikitori"
+name = "chidori"
 version = "0.3.0"
 description = "Live transcription with local Whisper"
 authors = ["Yusai Tajiri"]
 license = "MIT"
 edition = "2024"
 rust-version = "1.90"
-default-run = "kikitori"
+default-run = "chidori"
 
 [lib]
-name = "kikitori_lib"
+name = "chidori_lib"
 crate-type = ["rlib"]
 
 [features]

@@ -5,7 +5,7 @@ export function PageTitle({ title, sub, action, children }: { title: ReactNode; 
   return (
     <div className="shrink-0 px-[18px] pt-1.5 pb-3">
       <div data-tauri-drag-region className="flex items-baseline gap-2.5">
-        <h2 data-tauri-drag-region className="text-[24px] leading-tight font-bold tracking-tight">
+        <h2 data-tauri-drag-region className="text-[24px] leading-tight font-medium tracking-tight">
           {title}
         </h2>
         {sub && (

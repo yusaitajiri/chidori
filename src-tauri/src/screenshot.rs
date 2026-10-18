@@ -52,7 +52,7 @@ pub struct CaptureResult {
 /// OS-specific capture behind a trait (section 6).
 pub trait ScreenCapturer: Send + Sync {
     fn capture(&self, target: CaptureTarget) -> anyhow::Result<CaptureResult>;
-    /// The windows a screenshot could take, front first, Kikitori's own left out.
+    /// The windows a screenshot could take, front first, Chidori's own left out.
     fn windows(&self) -> anyhow::Result<Vec<WindowInfo>>;
 }
 
