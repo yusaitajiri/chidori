@@ -4,12 +4,24 @@ All notable changes are listed here. Versions follow [SemVer](https://semver.org
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-19
+
+### Added
+
+- The setup wizard's shortcut step sets the shortcuts, or leaves them off.
+- While recording, words still on their way show 「文字起こし中…」 with a spinner, so a slow PC no longer looks stuck; 仕上げ中 has a spinner too.
+
 ### Changed
 
 - Kikitori is now Chidori. Updating from Kikitori removes the old install and brings your settings, models and recordings along (`Documents\Kikitori` becomes `Documents\Chidori`).
-- A new look from the kamon brand: a warm grey ground, the plover crest as the icon, Zen Kaku Gothic New, and Chidori's 朱 for buttons and the voice you hear. 開始 is a button in place of the red dot, and errors and warnings come on brick and ochre with their words.
+- A new look from the kamon brand: a warm grey ground, the plover crest as the icon, Zen Kaku Gothic New, and Chidori's 朱 for buttons and the voice you hear. 開始 is a round button with the record dot, and errors and warnings come on brick and ochre with their words.
 - The tray icon is ink while idle and takes its colour while recording.
 - PDFs use the same ink and 朱, with a double rule under the title.
+- The window opens expanded until you shrink it.
+
+### Fixed
+
+- When transcription fell behind, echo of 相手 in a long 自分 line could be kept as 自分's words.
 
 ## [0.3.0] - 2026-10-10
 
