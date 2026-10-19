@@ -4,7 +4,9 @@ All notable changes are listed here. Versions follow [SemVer](https://semver.org
 
 ## [Unreleased]
 
-## [0.4.0] - 2026-10-19
+## [0.4.1] - 2026-10-19
+
+0.4.0 was built but never published: its sound did not play back. Its changes are all here.
 
 ### Added
 
@@ -22,6 +24,7 @@ All notable changes are listed here. Versions follow [SemVer](https://semver.org
 ### Fixed
 
 - When transcription fell behind, echo of 相手 in a long 自分 line could be kept as 自分's words.
+- A saved session's sound plays back in the installed app, and each press that cannot open the file says so.
 
 ## [0.3.0] - 2026-10-10
 
