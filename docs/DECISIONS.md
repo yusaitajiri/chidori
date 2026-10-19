@@ -557,7 +557,9 @@ found a reason to deviate.
   `core:default` and window dragging. No plugin command is reachable from the webview: the
   clipboard, dialogs, opener, notifications and store are all used from Rust.
 - **CSP** follows the spec and adds the Windows forms Tauri uses: `ipc:`/`http://ipc.localhost`
-  for IPC and `http://asset.localhost` for screenshot thumbnails of past sessions.
+  for IPC and `http://asset.localhost` for past sessions' screenshot thumbnails (`img-src`) and sound
+  (`media-src`; without it the default `'self'` blocks playback in release builds, while dev builds,
+  served by Vite, get no CSP at all).
 - **`open_path`** only opens paths inside the output root, the models folder or the log folder.
 - **TLS** uses rustls with the ring provider (installed at startup), matching the updater plugin.
 

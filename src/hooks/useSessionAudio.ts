@@ -45,6 +45,9 @@ export function useSessionAudio(active: boolean): Player {
       else store.getState().setPlaying(null);
     });
     e.addEventListener("error", () => {
+      // Forget the file, so the next press loads it again and fails (and says so) again, instead
+      // of playing an element that has already given up.
+      part.current = -1;
       setPlaying(false);
       store.getState().setPlaying(null);
       useUi.getState().toast(i18n.t("audioMissing"), "warn");

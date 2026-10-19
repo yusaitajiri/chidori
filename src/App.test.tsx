@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useTranscript } from "./store/transcript";
+import { useUi } from "./store/ui";
 import { FakeBackend, FOLDER, SESSION_ID } from "./test/backend";
 import { resetStores } from "./test/fixtures";
 import { fakeAudio } from "./test/media";
@@ -241,6 +242,21 @@ describe("playing a saved session", () => {
     expect(await screen.findByText("音声ファイルを開けません")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "再生" })).toBeInTheDocument();
     expect(document.querySelector(".kk-playhead")).toBeNull();
+  });
+
+  it("tries the file again, and says so again, on every press", async () => {
+    const audio = fakeAudio();
+    const user = await launch();
+    await recordAndSave(user);
+    await user.click(screen.getByRole("button", { name: "再生" }));
+    audio.fail();
+    await screen.findByText("音声ファイルを開けません");
+    act(() => useUi.setState({ toasts: [] }));
+    await user.click(screen.getByRole("button", { name: "再生" }));
+    // It waits for the file to load again rather than playing the element that failed.
+    expect(audio.playing).toBe(false);
+    audio.fail();
+    expect(await screen.findByText("音声ファイルを開けません")).toBeInTheDocument();
   });
 
   it("has nothing to play when the sound was not kept", async () => {
