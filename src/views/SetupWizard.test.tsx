@@ -21,6 +21,7 @@ function setup(models: ModelEntry[]) {
     run_benchmark: () => bench,
     mic_test: { peakDbfs: -12, text: "テスト中です", device: "USB Mic" },
     get_app_info: makeInfo(),
+    set_settings: ({ partial }: { partial: object }) => ({ ...makeSettings(), ...partial }),
   });
   useSettings.setState({ settings: makeSettings(), info: makeInfo({ setupDone: false }) });
   return { user: userEvent.setup(), ...render(<SetupWizard />) };
@@ -91,7 +92,7 @@ describe("SetupWizard", () => {
     expect(calls("model_download")).toEqual([{ id: "small-q5" }]);
   });
 
-  it("tests the mic, shows what it heard, then names the shortcuts and finishes", async () => {
+  it("tests the mic, shows what it heard, then sets the shortcuts and finishes", async () => {
     const { user } = setup([{ ...turbo(), installed: true, selected: true }]);
     await user.click(next());
     await user.click(next());
@@ -104,13 +105,16 @@ describe("SetupWizard", () => {
     expect(screen.getByText("USB Mic")).toBeInTheDocument();
     await user.click(next());
     expect(title()).toHaveTextContent("ショートカット");
-    expect(screen.getAllByText("Shift")).toHaveLength(2);
-    expect(screen.getByText("R")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ctrl+Shift+R" })).toBeInTheDocument();
+    // Optional: one can be turned off, and the step goes on either way.
+    await user.click(screen.getAllByRole("button", { name: "オフにする" })[1]);
+    expect(calls("set_settings")).toEqual([{ partial: { hotkeys: { screenshot: "" } } }]);
     await user.click(next());
     expect(title()).toHaveTextContent("準備ができました");
     await user.click(screen.getByRole("button", { name: "はじめる" }));
     expect(calls("complete_setup")).toHaveLength(1);
-    expect(calls("get_app_info")).toHaveLength(1);
+    // Once after the shortcut changed, once when setup completes.
+    expect(calls("get_app_info")).toHaveLength(2);
   });
 
   it("reassures when the mic test heard no words, and the test can be skipped", async () => {

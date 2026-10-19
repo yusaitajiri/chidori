@@ -276,11 +276,25 @@ found a reason to deviate.
   behind (FR-25) is the brand's warning ochre. It (and 一時停止中) is written on the line's left
   end, on the ground, since the row under the line has no room left beside the timer. No glows,
   gradients, blur or shadows except the brand's one shadow on what floats (menus, dialogs, toasts).
-- **The kamon's double line** appears in its three places: 子持ち罫 under the title bar on every
-  view; the inner line on each view's one primary button (開始 before a recording, 停止 while
-  recording, 保存 in a dialog); and the frame on the container being worked in (a dialog, and a
-  transcript line while it is edited). The recording view keeps 停止 as its primary while a line
-  is edited, since stopping must stay one tap away.
+- **The kamon's double line** appears in its three places, lighter than the brand's default: 子持ち罫
+  only in the setup wizard, under its title and step bar, which together are its app bar (a rule
+  under the title bar and another line under the steps read as one line too many); the app's other
+  views have no rule, and the title bar sits straight on the view. The inner line is on each
+  view's one primary button (開始 before a recording, 停止 while recording, 保存 in a dialog), and
+  the frame on the container being worked in (a dialog, and a transcript line while it is edited).
+  The recording view keeps 停止 as its primary while a line is edited, since stopping must stay
+  one tap away.
+- **開始 is round**, a primary button with the record dot and no word (its name is in the tooltip
+  and for screen readers), 64 px in the middle of the expanded window and 36 px on the compact
+  line. The brand keeps `radius-full` for people, so this is a departure: the round record button
+  is the one shape everybody reads as "start recording", and it is the only round control.
+- **The window opens expanded** (420 × 640) until it is shrunk; the compact window is remembered
+  once chosen.
+- **Text on its way.** While recording, speech 1.5 s or more behind (the backend's lag, FR-25)
+  shows 「文字起こし中…」 with a spinner under the last line, or in place of 「話し声を待っています…」
+  before the first one, unless a grey partial already shows the words coming. A fast GPU writes a
+  line within that time, so the note is for slow PCs, where text can take many seconds. 仕上げ中
+  has a spinner too, since one long stretch can keep its count still.
 - **Type.** Zen Kaku Gothic New (400 and 500) and IBM Plex Mono for numbers that line up (the
   timer, times), bundled from `@fontsource` so the window never fetches fonts: the kit's
   `fonts.css`, which loads them from Google Fonts, is left out. The transcript is the brand's body,

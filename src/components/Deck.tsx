@@ -17,7 +17,7 @@ import { useSource } from "../store/source";
 import { useTranscriptStore } from "../store/transcript";
 import { useUi } from "../store/ui";
 import { ModelNote } from "./ModelNote";
-import { Progress } from "./ui";
+import { Progress, Spinner } from "./ui";
 
 type DeckState = "start" | "recording" | "paused" | "finishing" | "review";
 
@@ -566,7 +566,8 @@ function HotkeyHint({ className }: { className: string }) {
 }
 
 /**
- * 開始, the one primary action before a recording. In the expanded window a hotkey (when one is
+ * 開始, the one primary action before a recording, a round button with the record dot. In the
+ * expanded window a hotkey (when one is
  * set) is under it and the model sits at the bottom, so 開始 alone is centred; in the compact one
  * it sits on the empty line where the pen will start.
  */
@@ -586,8 +587,16 @@ function StartRow({ compact }: { compact: boolean }) {
   };
   return (
     <div className="absolute inset-0 animate-fade-in">
-      <button type="button" className="kk-go button button-primary" onClick={start} disabled={disabled} data-starting={starting || undefined}>
-        {t("start")}
+      <button
+        type="button"
+        className="kk-go button button-primary"
+        onClick={start}
+        disabled={disabled}
+        data-starting={starting || undefined}
+        aria-label={t("start")}
+        title={t("start")}
+      >
+        <span className="kk-go-dot" aria-hidden />
       </button>
       {compact ? (
         <HotkeyHint className="kk-go-hint" />
@@ -737,9 +746,13 @@ function FinishingRow() {
   return (
     <div className="kk-row flex items-center justify-between gap-3 text-[12.5px] animate-fade-in" title={t("finishingDetail")}>
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="min-w-0 truncate">
-          <b className="font-medium">{t("finishing")}</b>
-          {left !== null && <span className="text-muted"> · {t("finishingLeft", { n: left })}</span>}
+        {/* The spinner says it is still working while one long stretch keeps the count still. */}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Spinner size={12} className="shrink-0 text-muted" />
+          <span className="min-w-0 truncate">
+            <b className="font-medium">{t("finishing")}</b>
+            {left !== null && <span className="text-muted"> · {t("finishingLeft", { n: left })}</span>}
+          </span>
         </span>
         {bar && <Progress value={finishing.doneMs} max={finishing.totalMs} className="max-w-[260px] animate-fade-in" />}
       </span>

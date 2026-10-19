@@ -21,8 +21,8 @@ pub enum Locale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Layout {
-    #[default]
     Compact,
+    #[default]
     Expanded,
 }
 
@@ -74,8 +74,8 @@ pub struct WindowSettings {
 
 impl Default for WindowSettings {
     fn default() -> Self {
-        // Off until pinned in the title bar.
-        Self { always_on_top: false, layout: Layout::Compact }
+        // Off until pinned in the title bar; the window opens expanded until it is shrunk.
+        Self { always_on_top: false, layout: Layout::Expanded }
     }
 }
 
@@ -457,7 +457,7 @@ mod tests {
         let s = parse_lenient(&json!({}), ROOT);
         assert_eq!(s.locale, Locale::Ja);
         assert!(!s.window.always_on_top);
-        assert_eq!(s.window.layout, Layout::Compact);
+        assert_eq!(s.window.layout, Layout::Expanded);
         assert_eq!(s.source.mode, SourceMode::System);
         assert!(s.source.include_mic);
         assert_eq!(s.vad.start_threshold, 0.5);
@@ -490,7 +490,7 @@ mod tests {
         let s = parse_lenient(&stored, ROOT);
         assert_eq!(s.locale, Locale::Ja);
         assert!(!s.window.always_on_top);
-        assert_eq!(s.window.layout, Layout::Compact);
+        assert_eq!(s.window.layout, Layout::Expanded);
         assert_eq!(s.vad.start_threshold, 0.8);
         assert_eq!(s.vad.hangover_ms, 400);
         assert_eq!(s.vocabulary, vec!["大澤研", "Chidori"]);

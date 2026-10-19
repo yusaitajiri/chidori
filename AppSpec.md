@@ -126,13 +126,13 @@ items (section 19).
 | FR-91 | System | Single instance: a second launch focuses the running window. |
 | FR-92 | System | Configurable hotkeys (Start/Stop, screenshot, important mark, cut); one that fails to register is reported in Settings. |
 | FR-93 | System | Closing the window hides it to the tray while recording or finishing, and quits otherwise. Quitting while recording asks first. |
-| FR-94 | System | Compact and expanded layouts, an always-on-top pin (off by default), remembered window position. |
+| FR-94 | System | Compact and expanded layouts (expanded by default), an always-on-top pin (off by default), remembered window position. |
 | FR-95 | System | Update check at most once a day through the Tauri updater. |
 
 ## 5. UI and UX
 
-One small window: compact (380 × 170) for sitting beside a call, expanded (420 × 640, resizable)
-for the transcript, History and Settings. The look is the kamon brand (`@yusai/kamon-react`): a
+One small window: expanded (420 × 640, resizable) for the transcript, History and Settings, and
+what it opens in until you shrink it; compact (380 × 170) for sitting beside a call. The look is the kamon brand (`@yusai/kamon-react`): a
 warm grey ground, ink, and Chidori's one colour, 朱, for what you can act on, what is selected and
 the voice you hear. `docs/DECISIONS.md` → UI explains how the app applies it and is the reference
 for UI changes.

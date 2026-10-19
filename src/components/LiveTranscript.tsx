@@ -1,16 +1,17 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowRightLeft, Camera, Check, ImagePlus, Link2, Pause, Pencil, Play, Scissors, Star, StepForward, Trash2, TriangleAlert, X } from "lucide-react";
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "../ipc/commands";
 import type { Marker, Screenshot, Segment, SourceId, TimelineItem } from "../ipc/types";
 import { reportError } from "../lib/actions";
 import { dayOf, dayText, sessionClock } from "../lib/format";
 import { orderTimeline, type PartialItem } from "../lib/timeline";
+import { useRecording } from "../store/recording";
 import { useTranscriptStore } from "../store/transcript";
 import { LINE_Y } from "./Deck";
-import { Button } from "./ui";
+import { Button, Spinner } from "./ui";
 
 type Row =
   | { key: string; kind: "header" }
@@ -22,6 +23,29 @@ const TURN_MS = 60_000;
 
 /** Further than this many screens from the newest line, 最新へ jumps instead of gliding. */
 const FAR_SCREENS = 2;
+/**
+ * Speech this far behind is shown as being written. A fast GPU writes a line well within it, so
+ * the note only appears where text is slow to come, such as on a CPU, which has no grey partials.
+ */
+const WRITING_MS = 1_500;
+/** The room the note takes under the last line. */
+const WRITING_H = 28;
+
+/** Speech heard but not written yet, from the backend's lag (FR-25), while recording. */
+function useWriting(): boolean {
+  return useRecording((s) => (s.state === "recording" || s.state === "paused") && !s.deferred && (s.lag?.lagMs ?? 0) >= WRITING_MS);
+}
+
+/** 「文字起こし中…」 with a spinner, so a slow PC shows that the words are on their way. */
+function WritingNote({ className = "", style }: { className?: string; style?: CSSProperties }) {
+  const { t } = useTranslation();
+  return (
+    <span className={`flex animate-fade-in items-center gap-1.5 text-[12px] text-muted ${className}`} role="status" style={style}>
+      <Spinner size={12} />
+      {t("transcribing")}
+    </span>
+  );
+}
 
 /** A session offset as a clock time (`sessionClock`). */
 type Clock = (tMs: number) => string;
@@ -346,9 +370,17 @@ const RowView = memo(function RowView({ row, clock, twoSpeakers, editable, playa
   return <MarkerRow marker={item} clock={clock} />;
 });
 
-/** Before the first words: the line below already shows that it is listening. */
+/** Before the first words: the line below already shows that it is listening, and once speech is heard, that it is being written. */
 function WaitingForSpeech() {
   const { t } = useTranslation();
+  const writing = useWriting();
+  if (writing) {
+    return (
+      <div className="flex flex-1 items-center justify-center px-6">
+        <WritingNote />
+      </div>
+    );
+  }
   return <div className="flex flex-1 animate-fade-in items-center justify-center px-6 text-center text-[12px] text-muted">{t("waitingForSpeech")}</div>;
 }
 
@@ -417,11 +449,13 @@ export function Transcript({ editable, header, live }: { editable: boolean; head
   // Follow new lines, and rows that grow once measured (a picture loading); wait a frame so
   // new rows are measured first.
   const totalSize = virtualizer.getTotalSize();
+  // Grey partials already show the words coming; without them, a note under the last line does.
+  const writing = useWriting() && live && !rows.some((r) => r.kind === "partial");
   useEffect(() => {
     if (!live || !atBottom || rows.length === 0) return;
     const id = requestAnimationFrame(() => scrollToEnd(true));
     return () => cancelAnimationFrame(id);
-  }, [rows, totalSize, atBottom, live]);
+  }, [rows, totalSize, atBottom, live, writing]);
 
   // Stay pinned to the newest line when the window is resized (compact ⇄ expanded).
   useEffect(() => {
@@ -499,7 +533,7 @@ export function Transcript({ editable, header, live }: { editable: boolean; head
         aria-relevant="additions"
       >
         {/* The list runs on under the deck down to its line; scrolled to the end, the last row stays clear of it. */}
-        <div className="relative mx-auto w-full max-w-[760px]" style={{ height: totalSize + 20 + LINE_Y }}>
+        <div className="relative mx-auto w-full max-w-[760px]" style={{ height: totalSize + 20 + LINE_Y + (writing ? WRITING_H : 0) }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = rows[v.index];
             return (
@@ -522,6 +556,7 @@ export function Transcript({ editable, header, live }: { editable: boolean; head
               </div>
             );
           })}
+          {writing && <WritingNote className="absolute left-0 px-[18px] pt-2" style={{ top: totalSize }} />}
         </div>
       </div>
       {live && !atBottom && (
@@ -546,6 +581,7 @@ export function Transcript({ editable, header, live }: { editable: boolean; head
 export function TranscriptTail() {
   const { t } = useTranslation();
   const { rows, twoSpeakers } = useRows(false);
+  const writing = useWriting();
   const tail = rows.filter((r) => r.kind === "partial" || (r.kind === "item" && r.item.kind !== "marker")).slice(-2);
   // Cut long lines at the start, so the newest words stay visible.
   const tailText = (text: string, className = "") => (
@@ -554,7 +590,7 @@ export function TranscriptTail() {
     </span>
   );
   if (tail.length === 0) {
-    return <div className="truncate px-1 text-[12px] text-muted">{t("waitingForSpeech")}</div>;
+    return writing ? <WritingNote className="px-1" /> : <div className="truncate px-1 text-[12px] text-muted">{t("waitingForSpeech")}</div>;
   }
   const label = (source: SourceId) =>
     twoSpeakers && <span className={`shrink-0 text-[11px] font-medium ${source === "mic" ? "text-me" : "text-others"}`}>{source === "mic" ? t("me") : t("others")}</span>;

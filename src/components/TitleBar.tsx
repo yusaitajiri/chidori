@@ -68,7 +68,7 @@ export function WindowButtons({ layoutToggle = true }: { layoutToggle?: boolean 
   const { t } = useTranslation();
   const view = useUi((s) => s.view);
   const go = useUi((s) => s.go);
-  const layout = useSettings((s) => s.settings?.window.layout ?? "compact");
+  const layout = useSettings((s) => s.settings?.window.layout ?? "expanded");
   const onTop = useSettings((s) => s.settings?.window.alwaysOnTop ?? false);
   const update = useSettings((s) => s.update);
   // Only 録音 has a compact form; everywhere else the window is expanded, and shrinking it goes to
@@ -132,7 +132,8 @@ function Places() {
 /**
  * The title bar over every screen, kept while the views under it change: back (a past session, a
  * section of 設定), the name or what is recording, the three places as words (expanded) or as icons
- * (compact), and the window buttons. Draggable.
+ * (compact), and the window buttons. Draggable. No rule under it: the views start right below, and
+ * only the setup wizard draws one, under its title.
  */
 export function TitleBar({
   compact = false,
@@ -148,8 +149,7 @@ export function TitleBar({
   const back = useUi((s) => (setup ? undefined : backOf(s.view, s.settingsTab)));
   const places = !setup;
   return (
-    <div className="relative z-20 shrink-0">
-    <header data-tauri-drag-region className="flex h-10 items-center gap-1 pr-1.5 pl-3">
+    <header data-tauri-drag-region className="relative z-20 flex h-10 shrink-0 items-center gap-1 pr-1.5 pl-3">
       {back && (
         <IconButton size="sm" label={t("back")} onClick={() => go(back)} className="-ml-1.5">
           <ArrowLeft size={16} />
@@ -172,8 +172,5 @@ export function TitleBar({
       {places && <span className="mx-1 h-4 w-px shrink-0 bg-line" aria-hidden />}
       <WindowButtons layoutToggle={!setup} />
     </header>
-    {/* 子持ち罫, the kamon's double line, once under the app bar. */}
-    <hr className="rule mx-3" />
-    </div>
   );
 }

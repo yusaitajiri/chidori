@@ -327,29 +327,45 @@
 }
 
 /*
- * 開始, the view's primary button (ui.css `.button-primary`, with the kamon's inner line): in the
- * middle of the free space before a recording, or, compact, on the empty line's left end where
- * the pen will start. It fades as the pen comes in.
+ * 開始, the view's primary button (ui.css `.button-primary`, with the kamon's inner line), round
+ * with the record dot in it: in the middle of the free space before a recording, or, compact, on
+ * the empty line's left end where the pen will start. It fades as the pen comes in.
  */
 .kk-go {
   position: absolute;
   left: var(--kk-dx);
   top: var(--kk-sb);
   transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: calc(var(--space-8) + var(--space-1));
+  height: calc(var(--space-8) + var(--space-1));
+  padding: 0;
+  border-radius: var(--radius-full);
   transition:
     background-color 150ms,
     border-color 150ms,
     opacity 150ms;
 }
+.kk-go::after {
+  border-radius: var(--radius-full);
+}
+.kk-go-dot {
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
 .kk-deck-grow .kk-go {
   left: 50%;
   top: var(--kk-rest);
   transform: translate(-50%, -50%);
-  padding: var(--space-3) var(--space-8);
+  width: var(--space-16);
+  height: var(--space-16);
 }
-.kk-deck-compact .kk-go {
-  padding: var(--space-1) var(--space-4);
-  font: var(--text-label);
+.kk-deck-grow .kk-go-dot {
+  width: calc(var(--space-4) + var(--space-1));
+  height: calc(var(--space-4) + var(--space-1));
 }
 .kk-go:disabled {
   cursor: default;
@@ -378,7 +394,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--kk-rest) + var(--space-8) + var(--space-2));
+  top: calc(var(--kk-rest) + var(--space-12));
   display: flex;
   flex-direction: column;
   align-items: center;

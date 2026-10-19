@@ -2,7 +2,9 @@ import { Keyboard, Loader2, Mic, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MicWave } from "../components/MicWave";
-import { Button, Kbd, Progress } from "../components/ui";
+import { HotkeyInput } from "../components/HotkeyInput";
+import { useSetHotkey } from "../hooks/useSetHotkey";
+import { Button, Progress } from "../components/ui";
 import { PageTitle } from "../components/PageTitle";
 import { commands } from "../ipc/commands";
 import { on } from "../ipc/events";
@@ -26,6 +28,7 @@ export function SetupWizard() {
   const [mic, setMic] = useState<MicTestResult | null>(null);
   const [micLevel, setMicLevel] = useState<number | undefined>(undefined);
   const [testing, setTesting] = useState(false);
+  const setHotkey = useSetHotkey();
 
   const visible = models.filter((m) => !m.hidden || m.installed);
   const selectedId = choice ?? info?.recommendedModel ?? "turbo-q5";
@@ -92,7 +95,9 @@ export function SetupWizard() {
           ))}
         </div>
       </PageTitle>
-      <div key={step} className="min-h-0 flex-1 overflow-y-auto border-t border-line px-[18px] py-3.5">
+      {/* 子持ち罫 under the title and its steps, which together are the wizard's app bar. */}
+      <hr className="rule mx-3 shrink-0" />
+      <div key={step} className="min-h-0 flex-1 overflow-y-auto px-[18px] py-3.5">
         {STEPS[step] === "wizardWelcome" && (
           <div className="space-y-3">
             <ShieldCheck size={28} className="text-fg" />
@@ -210,12 +215,10 @@ export function SetupWizard() {
           <div className="space-y-3">
             <Keyboard size={28} className="text-fg" />
             <p>{t("wizardHotkeysBody")}</p>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-              <dt className="text-muted">{t("hotkeyToggle")}</dt>
-              <dd>{settings.hotkeys.toggle ? <Kbd keys={settings.hotkeys.toggle} /> : <span className="text-muted">{t("hotkeyOff")}</span>}</dd>
-              <dt className="text-muted">{t("hotkeyScreenshot")}</dt>
-              <dd>{settings.hotkeys.screenshot ? <Kbd keys={settings.hotkeys.screenshot} /> : <span className="text-muted">{t("hotkeyOff")}</span>}</dd>
-            </dl>
+            <div>
+              <HotkeyInput label={t("hotkeyToggle")} value={settings.hotkeys.toggle} onChange={(v) => setHotkey("toggle", v)} error={info?.hotkeyErrors.toggle} />
+              <HotkeyInput label={t("hotkeyScreenshot")} value={settings.hotkeys.screenshot} onChange={(v) => setHotkey("screenshot", v)} error={info?.hotkeyErrors.screenshot} />
+            </div>
           </div>
         )}
 

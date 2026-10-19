@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ScreenshotPayload, Segment, SourceId } from "../ipc/types";
 import { createTranscriptStore, TranscriptContext, type TranscriptStore } from "../store/transcript";
+import { useRecording } from "../store/recording";
 import { useUi } from "../store/ui";
 import { resetStores } from "../test/fixtures";
 import { answer, calls, fails } from "../test/tauri";
@@ -47,6 +48,26 @@ describe("Transcript", () => {
     unmount();
     show(<Transcript editable />);
     expect(screen.getByText("文字起こしはありません")).toBeInTheDocument();
+  });
+
+  it("says the words are being written when speech waits for transcription, unless grey words show it", () => {
+    show();
+    const lag = (lagMs: number) => act(() => useRecording.setState({ state: "recording", lag: { lagMs, queued: 1, device: "cpu" } }));
+    // A line a fast GPU writes in time shows nothing.
+    lag(800);
+    expect(screen.getByText("話し声を待っています…")).toBeInTheDocument();
+    lag(4000);
+    expect(screen.getByRole("status")).toHaveTextContent("文字起こし中…");
+    act(() => store.getState().addSegment(seg("a", 1000, "一行目")));
+    expect(screen.getByRole("status")).toHaveTextContent("文字起こし中…");
+    act(() => store.getState().setPartial({ source: "app", utteranceId: "u-next", text: "えっと", tStartMs: 4000 }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    // Waiting for Stop on purpose is not being written.
+    act(() => {
+      store.getState().setPartial({ source: "app", utteranceId: "u-next", text: "", tStartMs: 4000 });
+      useRecording.setState({ deferred: true });
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("puts screenshots and late lines where they belong in time, with the words still coming last", () => {

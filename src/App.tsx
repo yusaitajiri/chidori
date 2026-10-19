@@ -181,7 +181,7 @@ export default function App() {
   }, [load]);
 
   const needsWizard = !!info && (!info.setupDone || state === "needs_model");
-  const layout = settings?.window.layout ?? "compact";
+  const layout = settings?.window.layout ?? "expanded";
   const effectiveLayout = needsWizard || view !== "main" ? "expanded" : layout;
 
   useEffect(() => {
