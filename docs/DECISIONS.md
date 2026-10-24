@@ -142,6 +142,30 @@ found a reason to deviate.
   the DSP thread pads silence up to 300 ms before now so an open utterance can close.
 - **Health checks.** "No packets for 5 s" restarts mic and app streams once; only the mic then
   raises a banner, because process loopback can legitimately go quiet. System loopback is exempt.
+- **Files (FR-18) are decoded by Media Foundation**, not a Rust decoder such as symphonia: it reads
+  every container and codec Windows plays (the AAC in MP4 and M4A from Zoom, Teams and phones, MOV,
+  MKV, WebM, WMA, MP3, FLAC) and a video's audio track, with nothing new to ship; symphonia has no
+  Opus, AC-3 or WMA. Its own error codes (`0xC00D…`) read as 「このファイルの形式は読み込めません」,
+  a file with no audio track as 「このファイルには音声がありません」.
+- **Ogg Opus goes through libopus**, which the app ships for FR-09, because Windows can't read it:
+  `.opus` voice messages, and Chidori's own `audio/*.ogg`, so a session can be transcribed again
+  with another model. Only mono and stereo (mapping family 0).
+- **A file session is a session with one `file` source** (相手), not a new kind, so History,
+  playback, projects, exports and recovery work unchanged. It is named after the file, and
+  `startedAt` is when it was transcribed, so History lists it on that day. Every time it shows is
+  the place in the file (`00:12:34`), never a clock time: when a file was recorded is unknown (its
+  modified time is often when it was downloaded or copied). 続きを録音 onto one is allowed; the
+  added part's times are places in the session too.
+- **It runs as finishing from the start** (the `finishing` state): pause, cut, star, screenshots
+  and the lag notices mean nothing for a file, and finishing already shows progress, saves at the
+  end and offers 処理を中止. The bar is by file time: what was read, minus the speech still queued.
+- **Reading waits while 2 minutes of speech are queued.** That keeps memory bounded (queued speech
+  is 16 kHz float, about 230 MB an hour) while keeping the queue far enough behind that jobs merge
+  into 25 s ones. Measured on the meeting fixture (turbo-q5, RTX 5070 Ti, 2026-10-23): 3 minutes
+  of sound in 1.4–3 s from MP4, M4A, WebM, FLAC and Opus, CER 20–25% against one-pass 22.9%.
+- **Unprocessed audio**: a cancelled file, or one that broke off, marks what was queued and what
+  was never read as unprocessed. A file read to its end never does, though containers often state
+  a length a little different from the sound's (an MP4's video track may run longer).
 
 ## Sessions and exports
 

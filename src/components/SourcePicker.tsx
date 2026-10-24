@@ -1,9 +1,9 @@
-import { AppWindow, Check, ChevronDown, Mic, MonitorSpeaker, RefreshCw } from "lucide-react";
+import { AppWindow, Check, ChevronDown, FileAudio, Mic, MonitorSpeaker, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { AudioApp, SourceMode } from "../ipc/types";
-import { reportError } from "../lib/actions";
+import { reportError, transcribeFile } from "../lib/actions";
 import { isBusy, useRecording } from "../store/recording";
 import { useSettings } from "../store/settings";
 import { useSource } from "../store/source";
@@ -387,7 +387,8 @@ export function SourceDropdown({ className = "" }: { className?: string }) {
 
 /**
  * The full picker over the window under the title bar (a portal, so the page's own layers don't
- * cover it): the compact window's way to choose before a recording.
+ * cover it): the compact window's way to choose before a recording, and to transcribe a file
+ * instead (FR-18), which the expanded window offers under 開始.
  */
 export function SourcePanel({ onClose, dense = false }: { onClose: () => void; dense?: boolean }) {
   const { t } = useTranslation();
@@ -406,6 +407,17 @@ export function SourcePanel({ onClose, dense = false }: { onClose: () => void; d
           </IconButton>
         </div>
         <SourcePicker dense={dense} />
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            void transcribeFile();
+          }}
+          className="kk-link mt-2 inline-flex items-center gap-1.5"
+        >
+          <FileAudio size={13} aria-hidden />
+          {t("transcribeFile")}
+        </button>
       </div>
     </div>,
     document.body,

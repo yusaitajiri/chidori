@@ -1,3 +1,4 @@
+import { FileAudio } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmQuitDialog, ExportDialog, RecoveryDialog } from "./components/Dialogs";
@@ -11,6 +12,7 @@ import { StartScreen } from "./components/StartScreen";
 import { TitleBar } from "./components/TitleBar";
 import { Spinner } from "./components/ui";
 import i18n from "./i18n";
+import { useFileDrop } from "./hooks/useFileDrop";
 import { useLiveSource } from "./hooks/useLiveSource";
 import { commands } from "./ipc/commands";
 import { on } from "./ipc/events";
@@ -164,6 +166,8 @@ export default function App() {
 
   useBackendEvents();
   useLiveSource(state === "recording" || state === "paused", useRecording((s) => s.sessionId));
+  const needsWizard = !!info && (!info.setupDone || state === "needs_model");
+  const dropping = useFileDrop(state === "ready" && !!info && !needsWizard);
 
   useEffect(() => {
     void (async () => {
@@ -180,7 +184,6 @@ export default function App() {
     })();
   }, [load]);
 
-  const needsWizard = !!info && (!info.setupDone || state === "needs_model");
   const layout = settings?.window.layout ?? "expanded";
   const effectiveLayout = needsWizard || view !== "main" ? "expanded" : layout;
 
@@ -221,6 +224,14 @@ export default function App() {
         {body}
       </div>
       {flash > 0 && <div key={flash} className="kk-flash pointer-events-none fixed inset-0 z-50" aria-hidden />}
+      {dropping && (
+        <div className="pointer-events-none fixed inset-x-0 top-10 bottom-0 z-40 grid animate-fade-in place-items-center bg-bg" role="status">
+          <span className="flex flex-col items-center gap-2 text-[13px] font-medium text-muted">
+            <FileAudio size={28} strokeWidth={1.5} aria-hidden />
+            {t("dropToTranscribe")}
+          </span>
+        </div>
+      )}
       <Toasts />
       <RecoveryDialog />
       <ConfirmQuitDialog />

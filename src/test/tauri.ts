@@ -23,6 +23,11 @@ export function emit<K extends keyof EventMap>(name: K, payload: EventMap[K]) {
   for (const l of [...(listeners.get(name) ?? [])]) l({ payload });
 }
 
+/** Drags files onto the window (`onDragDropEvent`, see `setup.ts`). */
+export function dragDrop(payload: { type: "enter" | "drop"; paths: string[] } | { type: "leave" }) {
+  for (const l of [...(listeners.get("test://drag-drop") ?? [])]) l({ payload });
+}
+
 /**
  * Answers commands by name: a function is called with the command's arguments, anything else is
  * the result. Commands left out resolve to `undefined`, as most of them do.

@@ -34,7 +34,8 @@ function LiveTag({ compact }: { compact: boolean }) {
   const view = useUi((s) => s.view);
   const go = useUi((s) => s.go);
   const quiet = state === "paused" || state === "finishing";
-  const label = state === "paused" ? t("paused") : state === "finishing" ? t("finishing") : t("recording");
+  const fromFile = !!recorded?.ids.includes("file");
+  const label = state === "paused" ? t("paused") : state === "finishing" ? t(fromFile ? "transcribingFile" : "finishing") : t("recording");
   const body = (
     <>
       <span className={`size-2 shrink-0 rounded-[2px] transition-colors duration-150 ${quiet ? "bg-line-strong" : "bg-rec"}`} aria-hidden />

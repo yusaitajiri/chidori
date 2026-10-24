@@ -1,6 +1,7 @@
 // Mirrors the Rust IPC types (section 14). Field names are camelCase on both sides.
 
-export type SourceId = "mic" | "app" | "system";
+/** `file`: an audio or video file transcribed after the fact (FR-18). */
+export type SourceId = "mic" | "app" | "system" | "file";
 export type SourceMode = "mic" | "system" | "app";
 export type UiState = "needs_model" | "ready" | "recording" | "paused" | "finishing";
 export type Language = "ja" | "en" | "auto";
@@ -21,6 +22,7 @@ export type ErrorCode =
   | "E_HOTKEY_TAKEN"
   | "E_PDF_FAILED"
   | "E_NETWORK"
+  | "E_FILE_UNREADABLE"
   | "E_INTERNAL";
 
 export type AppError = { code: ErrorCode; message: string };
@@ -86,7 +88,10 @@ export type EngineStatus = {
   error: string | null;
 };
 
-/** What is being recorded: the app or the whole system first, then the mic; named by the UI. */
+/**
+ * What is being recorded: the app or the whole system first, then the mic; named by the UI.
+ * `appName` is the app's name, or the file's when a file is transcribed.
+ */
 export type RecordedSources = { ids: SourceId[]; appName?: string };
 
 /** An open window, as the camera's menu lists it (FR-34). */

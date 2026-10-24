@@ -231,6 +231,38 @@ pub async fn continue_recording(app: AppHandle, session_id: String, source: Sour
     .await
 }
 
+/// What the file dialog offers to transcribe (FR-18): what Windows plays, video included. Any other
+/// file can still be picked under 「すべてのファイル」, and Media Foundation says whether it reads it.
+const MEDIA_EXTENSIONS: &[&str] = &[
+    "mp3", "m4a", "aac", "wav", "flac", "ogg", "opus", "wma", "amr", "3gp", "mp4", "m4v", "mov", "mkv", "webm", "avi",
+    "wmv", "mpg", "mpeg", "ts", "mts", "m2ts",
+];
+
+/// Transcribes an audio or video file into a new session (FR-18): the one given (dropped on the
+/// window), or one picked in a dialog. `None` when the dialog is cancelled.
+#[tauri::command]
+pub async fn transcribe_file(app: AppHandle, path: Option<String>) -> AppResult<Option<StartResponse>> {
+    blocking(app, move |app, st| {
+        let path = match path {
+            Some(p) => Some(PathBuf::from(p)),
+            None => {
+                let ja = st.settings.read().locale == Locale::Ja;
+                let mut dialog = app
+                    .dialog()
+                    .file()
+                    .add_filter(if ja { "音声・動画ファイル" } else { "Audio and video" }, MEDIA_EXTENSIONS)
+                    .add_filter(if ja { "すべてのファイル" } else { "All files" }, &["*"]);
+                if let Some(window) = app.get_webview_window("main") {
+                    dialog = dialog.set_parent(&window);
+                }
+                dialog.blocking_pick_file().and_then(|p| p.into_path().ok())
+            }
+        };
+        path.map(|p| recorder::transcribe_file(app, st, p)).transpose()
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn stop_recording(app: AppHandle) -> AppResult<()> {
     blocking(app, recorder::stop).await

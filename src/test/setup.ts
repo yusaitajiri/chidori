@@ -8,6 +8,11 @@ vi.mock("@tauri-apps/api/core", () => ({
   convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
 }));
 vi.mock("@tauri-apps/api/event", async () => ({ listen: (await import("./tauri")).listen }));
+// Files dragged onto the window arrive as `test://drag-drop` (`dragDrop` in `./tauri`).
+vi.mock("@tauri-apps/api/webview", async () => {
+  const { listen } = await import("./tauri");
+  return { getCurrentWebview: () => ({ onDragDropEvent: (h: (e: { payload: unknown }) => void) => listen("test://drag-drop", h) }) };
+});
 
 // What WebView2 has and jsdom lacks.
 globalThis.ResizeObserver ??= class {

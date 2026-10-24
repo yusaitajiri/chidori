@@ -82,7 +82,8 @@ function useRows(withHeader: boolean): { rows: Row[]; twoSpeakers: boolean; cloc
     }
     // Speaker names only matter when both sides are recorded.
     const twoSpeakers = sources.some((s) => s.id === "mic") && sources.some((s) => s.id !== "mic");
-    return { rows, twoSpeakers, clock: startedAt ? sessionClock(startedAt, continued) : undefined };
+    const fromFile = sources.some((s) => s.id === "file");
+    return { rows, twoSpeakers, clock: startedAt ? sessionClock(startedAt, continued, fromFile) : undefined };
   }, [items, partials, sources, startedAt, continued, withHeader]);
 }
 

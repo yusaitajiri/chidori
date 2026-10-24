@@ -24,8 +24,12 @@ export function clockAt(startedAt: string, tMs: number): string {
 /** A later recording onto a session (FR-08): from `atMs` on, clock times count from `startedAt`. */
 export type Continuation = { atMs: number; startedAt: string };
 
-/** Clock times of a session: from its start, or from the start of the continuation an offset falls in. */
-export function sessionClock(startedAt: string, continued: readonly Continuation[] = []): (tMs: number) => string {
+/**
+ * Clock times of a session: from its start, or from the start of the continuation an offset falls in.
+ * A session from a file (FR-18) gives places in the file instead, which is what its times mean.
+ */
+export function sessionClock(startedAt: string, continued: readonly Continuation[] = [], fromFile = false): (tMs: number) => string {
+  if (fromFile) return hms;
   return (tMs) => {
     const part = continued.findLast((c) => c.atMs <= tMs);
     return part ? clockAt(part.startedAt, tMs - part.atMs) : clockAt(startedAt, tMs);
@@ -108,7 +112,8 @@ export function dayName(day: string, now: Date): "today" | "yesterday" | null {
 /** What is being recorded, in the UI language: `Zoom + マイク`, `システム全体`. */
 export function sourcesText(sources: RecordedSources | undefined, t: (k: string) => string): string {
   if (!sources) return "";
-  const name = (id: string) => (id === "app" ? (sources.appName ?? t("srcApps")) : id === "system" ? t("srcSystem") : t("srcMic"));
+  const name = (id: string) =>
+    id === "app" ? (sources.appName ?? t("srcApps")) : id === "file" ? (sources.appName ?? t("srcFile")) : id === "system" ? t("srcSystem") : t("srcMic");
   return sources.ids.map(name).join(" + ");
 }
 

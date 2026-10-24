@@ -1,11 +1,11 @@
-import { Camera, ChevronDown, Copy, Ellipsis, FileOutput, Pause, Play, Scissors, Square, Star } from "lucide-react";
+import { Camera, ChevronDown, Copy, Ellipsis, FileAudio, FileOutput, Pause, Play, Scissors, Square, Star } from "lucide-react";
 import { useSessionAudio, type Player } from "../hooks/useSessionAudio";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useElapsed } from "../hooks/useElapsed";
 import { commands } from "../ipc/commands";
 import type { SourceId, WindowInfo } from "../ipc/types";
-import { addCut, continueRecording, copy, exportAs, markCurrentLine, newRecording, openFolder, pauseOrResume, reportError, takeScreenshot, toggleRecording } from "../lib/actions";
+import { addCut, continueRecording, copy, exportAs, markCurrentLine, newRecording, openFolder, pauseOrResume, reportError, takeScreenshot, toggleRecording, transcribeFile } from "../lib/actions";
 import { sessionClock, timerText } from "../lib/format";
 import { animate, reducedMotion, stopAnimating, type Animated } from "../lib/frameLoop";
 import { liveLine, mapLine, sessionShape, type Shape } from "../lib/line";
@@ -303,15 +303,19 @@ export function Deck({
   const durationMs = store((s) => s.durationMs);
   const startedAt = store((s) => s.startedAt);
   const continued = store((s) => s.continued);
-  const clock = useMemo(() => (startedAt ? sessionClock(startedAt, continued) : undefined), [startedAt, continued]);
   const sessionSources = store((s) => s.sources);
+  const fromFile = sessionSources.some((s) => s.id === "file");
+  const clock = useMemo(() => (startedAt ? sessionClock(startedAt, continued, fromFile) : undefined), [startedAt, continued, fromFile]);
+  const recorded = useRecording((s) => s.sources?.ids);
   const sound = store((s) => s.sound);
   const mode = useSource((s) => s.mode);
   const includeMic = useSource((s) => s.includeMic);
-  // Until the session is loaded, the sources come from the picker.
+  // Until the session is loaded, the sources come from the recording, or before it from the picker.
   const ids: SourceId[] = sessionSources.length
     ? sessionSources.map((s) => s.id)
-    : mode === "mic"
+    : recorded
+      ? recorded
+      : mode === "mic"
       ? ["mic"]
       : [mode === "app" ? "app" : "system", ...(includeMic ? (["mic"] as SourceId[]) : [])];
   const two = ids.includes("mic") && ids.some((id) => id !== "mic");
@@ -544,8 +548,9 @@ export function Deck({
       {state === "review" && playingMs !== null && total > 0 && <div className="kk-playhead" style={{ left: `${Math.min(100, (playingMs / total) * 100)}%` }} aria-hidden />}
       {state === "review" && !compact && clock && total > 0 && (
         <div className="kk-line-ends num" aria-hidden>
-          <span>{clock(0).slice(0, 5)}</span>
-          <span>{clock(total).slice(0, 5)}</span>
+          {/* A file's ends are its start and its length (FR-18); hours and minutes would read as minutes and seconds. */}
+          <span>{fromFile ? timerText(0) : clock(0).slice(0, 5)}</span>
+          <span>{fromFile ? timerText(total) : clock(total).slice(0, 5)}</span>
         </div>
       )}
       {scrub && (
@@ -577,6 +582,13 @@ function StartRow({ compact }: { compact: boolean }) {
   const info = useSettings((s) => s.info);
   const [starting, setStarting] = useState(false);
   const disabled = state !== "ready" || !info || starting;
+  // The other way in (FR-18): a recording made elsewhere, transcribed as fast as the PC can.
+  const fileLink = (
+    <button type="button" onClick={() => void transcribeFile()} disabled={disabled} className="kk-link inline-flex items-center gap-1.5 disabled:opacity-45">
+      <FileAudio size={13} aria-hidden />
+      {t("transcribeFile")}
+    </button>
+  );
   const start = async () => {
     setStarting(true);
     try {
@@ -604,6 +616,7 @@ function StartRow({ compact }: { compact: boolean }) {
         <>
           <div className="kk-go-under">
             <HotkeyHint className="" />
+            {fileLink}
           </div>
           <div className="kk-go-foot">
             <ModelNote />
@@ -735,6 +748,8 @@ const FINISHING_BAR_MS = 5_000;
 function FinishingRow() {
   const { t } = useTranslation();
   const finishing = useRecording((s) => s.finishing);
+  // A file (FR-18) shows how far into it the text has got, from the start.
+  const fromFile = useRecording((s) => !!s.sources?.ids.includes("file"));
   const left = finishing && finishing.total > 0 ? finishing.total - finishing.done : null;
   const [long, setLong] = useState(false);
   useEffect(() => {
@@ -742,15 +757,21 @@ function FinishingRow() {
     return () => clearTimeout(id);
   }, []);
   // By audio rather than by line: the lines left differ in length, merged ones most.
-  const bar = long && finishing && finishing.totalMs > 0;
+  const bar = (long || fromFile) && finishing && finishing.totalMs > 0;
   return (
-    <div className="kk-row flex items-center justify-between gap-3 text-[12.5px] animate-fade-in" title={t("finishingDetail")}>
+    <div className="kk-row flex items-center justify-between gap-3 text-[12.5px] animate-fade-in" title={fromFile ? undefined : t("finishingDetail")}>
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
         {/* The spinner says it is still working while one long stretch keeps the count still. */}
         <span className="flex min-w-0 items-center gap-1.5">
           <Spinner size={12} className="shrink-0 text-muted" />
           <span className="min-w-0 truncate">
-            <b className="font-medium">{t("finishing")}</b>
+            <b className="font-medium">{fromFile ? t("transcribingFile") : t("finishing")}</b>
+            {fromFile && finishing && finishing.totalMs > 0 && (
+              <span className="num text-muted">
+                {" "}
+                · {timerText(finishing.doneMs)} / {timerText(finishing.totalMs)}
+              </span>
+            )}
             {left !== null && <span className="text-muted"> · {t("finishingLeft", { n: left })}</span>}
           </span>
         </span>

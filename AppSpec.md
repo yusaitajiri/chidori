@@ -16,7 +16,7 @@ Section numbers are cited from code comments ("section 8", "FR-53"), so they sta
 | Term | Meaning |
 | --- | --- |
 | Session | One recording, from Start to Stop, saved as one folder |
-| Source | An audio input: `mic`, `system` (everything playing) or `app` (one process tree) |
+| Source | An audio input: `mic`, `system` (everything playing) or `app` (one process tree); `file` for an audio or video file (FR-18) |
 | Process loopback | Windows capture of one process tree's audio output only |
 | Utterance | A speech span cut out by the VAD, sent to Whisper as one job |
 | Segment | One finalized line of transcript text with start/end times and a source |
@@ -39,7 +39,8 @@ one key drops a screenshot at that moment; export Markdown, PDF and Typst; a sma
 downloads its model on first run; typo cleanup by copying the transcript with a ready-made
 prompt for any AI chat or agent (no API key).
 
-**Non-goals:** diarization beyond 自分/相手, translation, summaries, accounts or sync, video,
+**Non-goals:** diarization beyond 自分/相手, translation, summaries, accounts or sync, video (a
+video file's sound is transcribed, FR-18, but its pictures are not kept),
 audio editing, a caption overlay, platforms other than Windows 10/11 x64 (macOS is phase 2,
 section 19).
 
@@ -67,6 +68,10 @@ test that shows the first words, and opens ready to record.
 
 **Flow C: typo cleanup.** After stopping, 「Agent用にコピー」 puts a cleanup prompt and the
 transcript on the clipboard for pasting into an AI chat or agent.
+
+**Flow E: a recording made elsewhere.** On the start screen, 「ファイルから文字起こし」 (or drop a
+lecture's MP4 on the window). The view goes straight to 「文字起こし中 · 12:34 / 58:00」 with a bar,
+lines arriving as they are transcribed, and opens as a finished session when it is done.
 
 **Flow D: crash recovery.** On the next launch the app finds a session with no end marker, asks
 「前回の記録が途中で終了しています。復元しますか？」, and 復元 rebuilds the transcript from the event
@@ -96,6 +101,7 @@ items (section 19).
 | FR-15 | Sources | When the default output or mic device changes mid-recording, reopen the stream on the new one. |
 | FR-16 | Sources | Echo guard: drop 自分 lines that are the speakers picked up by the mic (section 8). |
 | FR-17 | Sources | Switch the source while recording, without stopping: capture restarts on the new source, the session lists it, and the timeline gets a `source_changed` marker. If it cannot start, the old source carries on. |
+| FR-18 | Sources | Transcribe an audio or video file into a new session: 「ファイルから文字起こし」 under 開始 (in the compact window, in the source panel), or a file dropped on the window. It runs as fast as Whisper keeps up, shown as finishing with how far into the file the text has got; 処理を中止 keeps what is done. The session is named after the file and its times are places in the file (`00:12:34`), in the app and in every export. |
 | FR-20 | Transcription | Local Whisper through whisper.cpp. Language 日本語 (default), English or 自動. |
 | FR-21 | Transcription | Final lines appear within the latency targets of section 16. |
 | FR-22 | Transcription | Grey provisional text for the utterance in progress (GPU only). |
@@ -185,7 +191,8 @@ One ASR worker is deliberate: two would fight over the GPU, and Whisper's cost p
 nearly fixed (section 8), so merging jobs beats running them in parallel.
 
 **OS boundary.** Windows code lives behind `AudioSource`, `AudioAppLister` and `ScreenCapturer`
-(plus `Vad` for the detector), so the macOS port adds files rather than changing the core.
+(plus `Vad` for the detector and `AudioDecoder` for files), so the macOS port adds files rather than
+changing the core.
 
 **Stack.** Tauri 2 (small installer, native APIs, a path to macOS); React + TypeScript + Vite
 with Zustand, Tailwind and i18next; `whisper-rs` (whisper.cpp, quantized GGML models, Vulkan on
@@ -249,6 +256,14 @@ segmenter cut utterances: it opens on a few frames of speech, closes after about
 silence (the hangover, adjustable 400–1200 ms), keeps 320 ms of pre-roll so first syllables
 survive, drops anything under 400 ms, and cuts long speech at the quietest point after 15 s and
 always by 25 s, inside Whisper's window.
+
+**Files (FR-18).** Media Foundation's source reader decodes the file's first audio track to float
+samples (any container and codec Windows plays; a video's pictures are never decoded); Ogg Opus,
+which Windows can't read, goes through libopus. The file thread places each block by its position
+in the file, so session time is file time, and the source runs the same DSP as a recording, without
+partials. Reading waits while 2 minutes of speech are queued, so a long file never sits in memory;
+the queue is always behind, so jobs merge (below) and the file runs many times faster than real
+time on a GPU. Its line is drawn from `levels.bin`, written by the DSP at file time.
 
 **ASR worker.** Final jobs go before partials, oldest first across sources; only the newest
 partial per source is kept. When it falls behind, waiting jobs from one source merge into one of

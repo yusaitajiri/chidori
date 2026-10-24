@@ -2,6 +2,7 @@
 
 pub mod capture;
 pub mod devices;
+pub mod media;
 pub mod meters;
 pub mod process;
 pub mod sessions;

@@ -36,6 +36,11 @@ export const commands = {
   /** Records more onto a saved session (FR-08). */
   continueRecording: (sessionId: string, source: SourceConfig) =>
     invoke<{ sessionId: string; folder: string }>("continue_recording", { sessionId, source }),
+  /**
+   * Transcribes an audio or video file into a new session (FR-18): `path` (dropped on the window),
+   * or one picked in a dialog; `null` when the dialog is cancelled.
+   */
+  transcribeFile: (path?: string) => invoke<{ sessionId: string; folder: string } | null>("transcribe_file", { path }),
   stopRecording: () => invoke<void>("stop_recording"),
   cancelFinishing: () => invoke<void>("cancel_finishing"),
   pauseRecording: () => invoke<void>("pause_recording"),

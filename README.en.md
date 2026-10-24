@@ -13,7 +13,7 @@ Chidori was called Kikitori before. Updating from Kikitori keeps your settings, 
 
 Chidori is a Windows app that transcribes meetings, lectures and videos as they happen, **entirely on your PC**.
 It tells an app's audio (Zoom, Teams and so on) apart from your microphone, labelling the lines Others and Me, and drops screenshots into the transcript at the moment you take them.
-Afterwards, save it as Markdown or PDF, or use Copy for AI agents to ask an AI for a summary.
+Afterwards, save it as Markdown or PDF, or use Copy for AI agents to ask an AI for a summary. Audio and video files you already have can be transcribed too.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/screenshot-dark.png">
@@ -51,6 +51,7 @@ To change the app's language later: Settings → General → Language. If your m
 | --- | --- |
 | Start or stop recording | **Start** / **Stop** |
 | Choose what to transcribe | **Source**: an app (Zoom and so on), All system audio, or Microphone only. Turn on **Record a conversation** to add your own voice as Me |
+| Transcribe a recording or video you already have | **Transcribe a file** under **Start** (in the compact window, inside the source picker), or drop the file on the window. Anything Windows plays works: MP4, MOV, MKV, WebM, M4A, MP3, WAV, FLAC, Opus and more. It runs as fast as your PC keeps up, and its times are places in the file (00:12:34) |
 | Change the source while recording | Pick again from the source at the top of the recording (in the compact window, **Recording** in the title bar); it switches without stopping |
 | Add a screenshot | **Screenshot** while recording. The **⌄** beside it picks what it takes: the app's window, a screen, or any other window |
 | Mark where a new topic or scene starts | The **scissors** button while recording. Exports give each part a heading |

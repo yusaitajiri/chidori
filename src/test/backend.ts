@@ -35,6 +35,7 @@ export class FakeBackend {
       pause_recording: () => this.report({ state: "paused" }),
       resume_recording: () => this.report({ state: "recording" }),
       stop_recording: () => this.report({ state: "finishing" }),
+      transcribe_file: ({ path }: { path?: string }) => this.transcribeFile(path ?? this.picked),
       get_session: ({ sessionId }: { sessionId: string }) => {
         if (this.session?.id !== sessionId) return Promise.reject({ code: "E_INTERNAL", message: "no such session" });
         return structuredClone(this.session);
@@ -70,6 +71,30 @@ export class FakeBackend {
       folder: FOLDER,
     };
     this.report({ state: "recording", elapsedMs: 0 }, announce);
+    return { sessionId: SESSION_ID, folder: FOLDER };
+  }
+
+  /** The file the open dialog returns; `null` cancels it. */
+  picked: string | null = "C:\\Users\\me\\Videos\\lecture.mp4";
+
+  /** A file transcribed into a new session (FR-18): it finishes from the start, named by the file. */
+  private transcribeFile(path: string | null) {
+    if (!path) return null;
+    const name = path.split("\\").pop() ?? path;
+    this.session = {
+      v: 1,
+      id: SESSION_ID,
+      title: name.replace(/\.[^.]+$/, ""),
+      startedAt: "2026-10-18T19:00:00+09:00",
+      durationMs: 0,
+      sources: [{ id: "file", label: "相手", name }],
+      model: { id: "turbo-q5", sha256: "0".repeat(64) },
+      language: "ja",
+      gpu: true,
+      items: [],
+      folder: FOLDER,
+    };
+    this.report({ state: "finishing", sources: { ids: ["file"], appName: name } });
     return { sessionId: SESSION_ID, folder: FOLDER };
   }
 

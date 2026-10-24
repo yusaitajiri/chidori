@@ -12,7 +12,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 use crate::asr::worker::{AsrConfig, EngineState, SessionCtx};
+use crate::audio::decode::DecodeError;
 use crate::audio::dsp::{self, DspParams, DspSummary, JobSink, SessionIds};
+use crate::audio::file_source::{FileSource, Pace};
 use crate::audio::level::FLOOR_DBFS;
 use crate::audio::source::{AudioSource, SourceStatus};
 use crate::error::{AppError, AppResult, ErrorCode};
@@ -27,7 +29,7 @@ use crate::session::log::{LogEvent, SessionLog};
 use crate::session::model::{MarkerKind, ModelRef, SCHEMA_VERSION, Session, SourceId, SourceInfo};
 use crate::session::store::SessionStore;
 use crate::session::{paths, recovery};
-use crate::settings::{LastApp, Locale, ScreenshotTarget, SourceMode};
+use crate::settings::{LastApp, Locale, ScreenshotTarget, Settings, SourceMode};
 use crate::state::AppState;
 
 #[cfg(windows)]
@@ -332,6 +334,95 @@ fn remember_source(app: &AppHandle, st: &AppState, config: &SourceConfig) {
     st.persist_settings(app);
 }
 
+/// The selected model, which the worker starts loading if it hasn't got it: capture may start
+/// while it loads (FR-02). Also whether the session will run on the GPU, as far as is known yet.
+fn prepare_model(st: &AppState, settings: &Settings) -> AppResult<(&'static catalog::CatalogEntry, bool)> {
+    let entry =
+        catalog::find(&settings.model_id).ok_or_else(|| AppError::new(ErrorCode::ModelMissing, "no model selected"))?;
+    if !entry.path_in(&st.models_dir).exists() {
+        return Err(AppError::new(ErrorCode::ModelMissing, format!("{} is not downloaded", entry.id)));
+    }
+    let status = st.worker.status();
+    if status.model_id.as_deref() != Some(entry.id.as_str())
+        || matches!(status.state, EngineState::Missing | EngineState::Failed)
+    {
+        st.load_selected_model();
+    }
+    let gpu = if status.state == EngineState::Ready {
+        status.gpu
+    } else {
+        settings.use_gpu && crate::asr::engine::gpu_compiled()
+    };
+    Ok((entry, gpu))
+}
+
+struct NewSession<'a> {
+    title: String,
+    started: &'a chrono::DateTime<Local>,
+    sources: Vec<SourceInfo>,
+    entry: &'static catalog::CatalogEntry,
+    gpu: bool,
+    version: &'a str,
+}
+
+/// A new session's folder under the output root, its log begun.
+fn create_session(settings: &Settings, new: NewSession) -> AppResult<(PathBuf, SessionLog, Session)> {
+    let root = PathBuf::from(&settings.output.root);
+    let started_at = new.started.to_rfc3339_opts(SecondsFormat::Secs, false);
+    std::fs::create_dir_all(&root)?;
+    let folder = paths::unique_folder(&root, &paths::folder_name(new.started, &new.title));
+    std::fs::create_dir_all(folder.join("images"))?;
+    let session_id = ulid::Ulid::generate().to_string();
+    let model = ModelRef { id: new.entry.id.clone(), sha256: new.entry.sha256.clone() };
+    let log = SessionLog::create(&folder)?;
+    log.append(&LogEvent::SessionStarted {
+        id: session_id.clone(),
+        title: new.title.clone(),
+        started_at: started_at.clone(),
+        sources: new.sources.clone(),
+        model: model.clone(),
+        language: settings.language.as_str().into(),
+        gpu: new.gpu,
+        app_version: new.version.to_string(),
+    })?;
+    let session = Session {
+        v: SCHEMA_VERSION,
+        id: session_id,
+        title: new.title,
+        started_at,
+        ended_at: None,
+        duration_ms: 0,
+        sources: new.sources,
+        model,
+        language: settings.language.as_str().into(),
+        gpu: new.gpu,
+        items: Vec::new(),
+        unprocessed_ms: 0,
+        project: None,
+        continued: Vec::new(),
+        audio: Vec::new(),
+    };
+    Ok((folder, log, session))
+}
+
+fn asr_config(settings: &Settings) -> AsrConfig {
+    AsrConfig {
+        language: settings.language,
+        vocabulary: settings.vocabulary.clone(),
+        accuracy_first: settings.accuracy_first,
+        hallucination_filter: settings.hallucination_filter,
+        audio_ctx_experimental: settings.audio_ctx_experimental,
+    }
+}
+
+fn segmenter_config(settings: &Settings) -> SegmenterConfig {
+    SegmenterConfig {
+        start_threshold: settings.vad.start_threshold,
+        hangover_ms: settings.vad.hangover_ms,
+        ..Default::default()
+    }
+}
+
 /// A new session, or a saved one that a recording continues (FR-08).
 #[cfg(windows)]
 enum Begin {
@@ -363,18 +454,7 @@ fn begin(app: &AppHandle, st: &AppState, config: SourceConfig, how: Begin) -> Ap
         return Err(AppError::internal("already recording"));
     }
     let settings = st.settings.read().clone();
-    let entry =
-        catalog::find(&settings.model_id).ok_or_else(|| AppError::new(ErrorCode::ModelMissing, "no model selected"))?;
-    let model_path = entry.path_in(&st.models_dir);
-    if !model_path.exists() {
-        return Err(AppError::new(ErrorCode::ModelMissing, format!("{} is not downloaded", entry.id)));
-    }
-    let status = st.worker.status();
-    if status.model_id.as_deref() != Some(entry.id.as_str())
-        || matches!(status.state, EngineState::Missing | EngineState::Failed)
-    {
-        st.load_selected_model();
-    }
+    let (entry, gpu) = prepare_model(st, &settings)?;
     check_source(&config)?;
 
     let started = Local::now();
@@ -382,11 +462,6 @@ fn begin(app: &AppHandle, st: &AppState, config: SourceConfig, how: Begin) -> Ap
     let app_name = source_name(&config, settings.locale);
     let Planned { plan, infos, app_root_pid } = plan_sources(&config, &app_name);
     let version = app.package_info().version.to_string();
-    let gpu = if status.state == EngineState::Ready {
-        status.gpu
-    } else {
-        settings.use_gpu && crate::asr::engine::gpu_compiled()
-    };
     let root = PathBuf::from(&settings.output.root);
     // The session to record into, the session time capture starts at, and whether it is new.
     let (folder, log, session, ids, at_ms, fresh) = match how {
@@ -395,39 +470,8 @@ fn begin(app: &AppHandle, st: &AppState, config: SourceConfig, how: Begin) -> Ap
                 .map(|t| t.trim().to_string())
                 .filter(|t| !t.is_empty())
                 .unwrap_or_else(|| paths::expand_title(&settings.output.title_template, &app_name, &started));
-            std::fs::create_dir_all(&root)?;
-            let folder = paths::unique_folder(&root, &paths::folder_name(&started, &title));
-            std::fs::create_dir_all(folder.join("images"))?;
-            let session_id = ulid::Ulid::generate().to_string();
-            let model = ModelRef { id: entry.id.clone(), sha256: entry.sha256.clone() };
-            let log = SessionLog::create(&folder)?;
-            log.append(&LogEvent::SessionStarted {
-                id: session_id.clone(),
-                title: title.clone(),
-                started_at: started_at.clone(),
-                sources: infos.clone(),
-                model: model.clone(),
-                language: settings.language.as_str().into(),
-                gpu,
-                app_version: version.clone(),
-            })?;
-            let session = Session {
-                v: SCHEMA_VERSION,
-                id: session_id,
-                title,
-                started_at: started_at.clone(),
-                ended_at: None,
-                duration_ms: 0,
-                sources: infos.clone(),
-                model,
-                language: settings.language.as_str().into(),
-                gpu,
-                items: Vec::new(),
-                unprocessed_ms: 0,
-                project: None,
-                continued: Vec::new(),
-                audio: Vec::new(),
-            };
+            let new = NewSession { title, started: &started, sources: infos.clone(), entry, gpu, version: &version };
+            let (folder, log, session) = create_session(&settings, new)?;
             (folder, log, session, SessionIds::default(), 0, true)
         }
         Begin::Continue { session_id } => {
@@ -451,22 +495,8 @@ fn begin(app: &AppHandle, st: &AppState, config: SourceConfig, how: Begin) -> Ap
     let session_audio_count = session.audio.len();
     let t0 = (platform::qpc_now_100ns() as i64) - at_ms as i64 * 10_000;
     let store = Arc::new(SessionStore::new(&folder, log, session, Arc::new(ids), events_of(app), settings.echo_guard));
-    let ctx = SessionCtx::new(
-        session_id.clone(),
-        AsrConfig {
-            language: settings.language,
-            vocabulary: settings.vocabulary.clone(),
-            accuracy_first: settings.accuracy_first,
-            hallucination_filter: settings.hallucination_filter,
-            audio_ctx_experimental: settings.audio_ctx_experimental,
-        },
-        store.clone(),
-    );
-    let segmenter = SegmenterConfig {
-        start_threshold: settings.vad.start_threshold,
-        hangover_ms: settings.vad.hangover_ms,
-        ..Default::default()
-    };
+    let ctx = SessionCtx::new(session_id.clone(), asr_config(&settings), store.clone());
+    let segmenter = segmenter_config(&settings);
     let levels = if fresh { LevelWriter::create(&folder) } else { LevelWriter::open_append(&folder) };
     let audio_file = audio::file_name(session_audio_count + 1);
     let audio = settings
@@ -551,6 +581,7 @@ fn start_sources(active: &mut Active, st: &AppState, start_ms: u64) -> Result<()
             pad_quiet_stream: p.id == SourceId::System,
             start_ms,
             audio: active.audio.as_ref().map(AudioRecorder::sender),
+            track: None,
         };
         let dsp = dsp::spawn(rx, params, active.ctx.clone(), sink.clone(), active.store.ids.clone(), st.levels.clone());
         let mut source: Box<dyn AudioSource> =
@@ -627,38 +658,64 @@ fn finish(app: &AppHandle, st: &AppState, mut active: Box<Active>, stop_ms: u64,
     if let Some(sound) = active.audio.take() {
         sound.finish();
     }
-    let id = active.store.id.clone();
+    let store = active.store.clone();
+    drop(active);
+    finish_session(app, st, &store, stop_ms, &cancel, None);
+}
+
+/// How a file's transcription ends (FR-18): its progress counts the whole file, and what was never
+/// read (cancelled, or the file broke off) is unprocessed too.
+struct FileEnd {
+    total_ms: u64,
+    unread_ms: u64,
+}
+
+/// A file's progress: how far into it the text has got, as far as can be told. Silence counts as
+/// done once read; speech once transcribed.
+fn file_progress(total_ms: u64, read_ms: u64, pending_ms: u64) -> events::ProgressPayload {
+    events::ProgressPayload { done: 0, total: 0, done_ms: read_ms.saturating_sub(pending_ms).min(total_ms), total_ms }
+}
+
+/// Transcribes what is queued (「仕上げ中…」), then saves the session.
+fn finish_session(
+    app: &AppHandle,
+    st: &AppState,
+    store: &Arc<SessionStore>,
+    stop_ms: u64,
+    cancel: &AtomicBool,
+    file: Option<FileEnd>,
+) {
+    let id = store.id.clone();
     st.worker.drop_partials(&id);
     // What waited for Stop runs now (FR-25).
     st.worker.set_deferred(&id, false);
     let total = st.worker.pending_finals(&id);
     let total_ms = st.worker.pending_ms(&id);
-    let mut dropped_ms = 0;
+    let mut dropped_ms = None;
     loop {
         let pending = st.worker.pending_finals(&id);
-        events::emit(
-            app,
-            events::FINISHING_PROGRESS,
-            &events::ProgressPayload {
+        let progress = match &file {
+            Some(f) => file_progress(f.total_ms, f.total_ms - f.unread_ms, st.worker.pending_ms(&id)),
+            None => events::ProgressPayload {
                 done: total.saturating_sub(pending),
                 total,
                 done_ms: total_ms.saturating_sub(st.worker.pending_ms(&id)),
                 total_ms,
             },
-        );
+        };
+        events::emit(app, events::FINISHING_PROGRESS, &progress);
         if pending == 0 {
             break;
         }
-        if cancel.load(Ordering::SeqCst) && dropped_ms == 0 {
-            dropped_ms = st.worker.cancel_session(&id).max(1);
+        if cancel.load(Ordering::SeqCst) && dropped_ms.is_none() {
+            dropped_ms = Some(st.worker.cancel_session(&id));
         }
         std::thread::sleep(Duration::from_millis(200));
     }
-    let store = active.store.clone();
-    if dropped_ms > 1 {
-        store.add_marker(stop_ms, MarkerKind::Unprocessed, Some(dropped_ms.div_ceil(1000).to_string()));
+    let unprocessed = dropped_ms.unwrap_or(0) + file.map_or(0, |f| f.unread_ms);
+    if unprocessed > 0 {
+        store.add_marker(stop_ms, MarkerKind::Unprocessed, Some(unprocessed.div_ceil(1000).to_string()));
     }
-    let unprocessed = if dropped_ms > 1 { dropped_ms } else { 0 };
     store.record(LogEvent::SessionStopped {
         ended_at: Local::now().to_rfc3339_opts(SecondsFormat::Secs, false),
         duration_ms: stop_ms,
@@ -696,7 +753,6 @@ fn finish(app: &AppHandle, st: &AppState, mut active: Box<Active>, stop_ms: u64,
             events::notice(app, Notice::new(NoticeLevel::Error, code.as_str(), "saveFailed"));
         }
     }
-    drop(active);
     *st.recorder.lock() = Phase::Idle;
     // Whisper's working buffers (a few hundred MB of VRAM per source) wait for the next recording.
     st.worker.release_states();
@@ -706,6 +762,155 @@ fn finish(app: &AppHandle, st: &AppState, mut active: Box<Active>, stop_ms: u64,
     if st.quit_after_finish.load(Ordering::SeqCst) {
         app.exit(0);
     }
+}
+
+/// Speech this far ahead of transcription is enough: reading a file waits, so a long one never
+/// sits in memory as queued speech (FR-18).
+const FILE_READ_AHEAD_MS: u64 = 120_000;
+
+/// Why a file can't be transcribed, in words the UI looks up (`noAudio`, `unsupported`).
+fn file_error(e: anyhow::Error) -> AppError {
+    let message = match e.downcast_ref::<DecodeError>() {
+        Some(DecodeError::NoAudio) => "noAudio".to_string(),
+        Some(DecodeError::Unsupported) => "unsupported".to_string(),
+        None => format!("{e:#}"),
+    };
+    AppError::new(ErrorCode::FileUnreadable, message)
+}
+
+/// Transcribes an audio or video file into a new session (FR-18). Its sound goes through the
+/// recording's pipeline, read as fast as Whisper takes it, while the view finishes (「仕上げ中…」)
+/// with how far into the file the text has got. Session time is time in the file.
+pub fn transcribe_file(app: &AppHandle, st: &AppState, path: PathBuf) -> AppResult<StartResponse> {
+    if !matches!(&*st.recorder.lock(), Phase::Idle) {
+        return Err(AppError::internal("already recording"));
+    }
+    let settings = st.settings.read().clone();
+    let (entry, gpu) = prepare_model(st, &settings)?;
+    let lossy = |s: Option<&std::ffi::OsStr>| s.map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    let name = lossy(path.file_name());
+    let started = Local::now();
+    let version = app.package_info().version.to_string();
+    let sources = vec![SourceInfo {
+        id: SourceId::File,
+        label: OTHERS.into(),
+        exe: None,
+        device: None,
+        name: Some(name.clone()),
+    }];
+    let new = NewSession { title: lossy(path.file_stem()), started: &started, sources, entry, gpu, version: &version };
+    let (folder, log, session) = create_session(&settings, new)?;
+    let id = session.id.clone();
+    let store = Arc::new(SessionStore::new(
+        &folder,
+        log,
+        session,
+        Arc::new(SessionIds::default()),
+        events_of(app),
+        settings.echo_guard,
+    ));
+    let ctx = SessionCtx::new(id.clone(), asr_config(&settings), store.clone());
+    let track = LevelWriter::create(&folder)
+        .inspect_err(|e| tracing::warn!("levels.bin: {e}"))
+        .ok()
+        .map(|w| Arc::new(parking_lot::Mutex::new(w)));
+    let audio_file = audio::file_name(1);
+    let sound = settings
+        .audio
+        .record
+        .then(|| AudioRecorder::start(folder.join(&audio_file), 0))
+        .and_then(|r| r.inspect_err(|e| tracing::warn!("{audio_file}: {e:#}")).ok());
+    let params = DspParams {
+        source: SourceId::File,
+        // The file's own clock: session time zero is its start.
+        t0_100ns: 0,
+        segmenter: segmenter_config(&settings),
+        partials: false,
+        pad_quiet_stream: false,
+        start_ms: 0,
+        audio: sound.as_ref().map(AudioRecorder::sender),
+        track: track.clone(),
+    };
+    st.levels.clear();
+    let (tx, rx) = crossbeam_channel::bounded(400);
+    let dsp = dsp::spawn(rx, params, ctx.clone(), st.worker.clone(), store.ids.clone(), st.levels.clone());
+    let (worker, sid) = (st.worker.clone(), id.clone());
+    let behind = move || worker.pending_ms(&sid) >= FILE_READ_AHEAD_MS;
+    let mut source = FileSource::new(SourceId::File, path, None, 0, 1.0).with_pace(Pace::AheadOf(Arc::new(behind)));
+    if let Err(e) = source.start(tx) {
+        let _ = dsp.join();
+        if let Some(sound) = sound {
+            sound.finish();
+        }
+        // Nothing may hold a file in the folder open while it goes.
+        drop((track, ctx, store));
+        let _ = std::fs::remove_dir_all(&folder);
+        return Err(file_error(e));
+    }
+    if sound.is_some() {
+        store.record(LogEvent::AudioStarted { file: audio_file, start_ms: 0 });
+    }
+    let progress = source.progress();
+    let cancel = Arc::new(AtomicBool::new(false));
+    *st.recorder.lock() = Phase::Finishing {
+        session_id: id.clone(),
+        folder: folder.clone(),
+        sources: RecordedSources { ids: vec![SourceId::File], app_name: Some(name) },
+        cancel: cancel.clone(),
+    };
+    emit_state(app, st);
+    tracing::info!("transcribing a file: session {id}");
+    let response = StartResponse { session_id: id.clone(), folder: folder.to_string_lossy().into_owned() };
+    let app = app.clone();
+    std::thread::Builder::new()
+        .name("file".into())
+        .spawn(move || {
+            let st = app.state::<AppState>();
+            let total = || progress.duration_ms.load(Ordering::SeqCst).max(progress.read_ms.load(Ordering::SeqCst));
+            while !progress.done.load(Ordering::SeqCst) && !cancel.load(Ordering::SeqCst) {
+                let read = progress.read_ms.load(Ordering::SeqCst);
+                events::emit(
+                    &app,
+                    events::FINISHING_PROGRESS,
+                    &file_progress(total(), read, st.worker.pending_ms(&id)),
+                );
+                std::thread::sleep(Duration::from_millis(200));
+            }
+            source.stop();
+            drop(source);
+            match dsp.join() {
+                Ok(summary) => tracing::info!(
+                    "file: {} s of audio, {} utterances",
+                    summary.samples_16k / 16_000,
+                    summary.utterances
+                ),
+                Err(_) => tracing::error!("file DSP thread panicked"),
+            }
+            if let Some(track) = &track
+                && let Err(e) = track.lock().flush()
+            {
+                tracing::warn!("levels.bin: {e}");
+            }
+            drop(track);
+            if let Some(sound) = sound {
+                sound.finish();
+            }
+            let broke_off = progress.error.lock().take();
+            if let Some(detail) = &broke_off {
+                events::notice(
+                    &app,
+                    Notice::new(NoticeLevel::Warn, ErrorCode::FileUnreadable.as_str(), "fileBrokeOff")
+                        .param("detail", detail.clone()),
+                );
+            }
+            let (read_ms, total_ms) = (progress.read_ms.load(Ordering::SeqCst), total());
+            // A file read to its end has nothing unread, though its stated length may differ a little.
+            let stopped_early = broke_off.is_some() || cancel.load(Ordering::SeqCst);
+            let unread_ms = if stopped_early { total_ms - read_ms } else { 0 };
+            finish_session(&app, &st, &store, read_ms, &cancel, Some(FileEnd { total_ms, unread_ms }));
+        })
+        .map_err(|e| AppError::internal(e.to_string()))?;
+    Ok(response)
 }
 
 pub fn cancel_finishing(st: &AppState) {

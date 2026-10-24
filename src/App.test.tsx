@@ -10,7 +10,7 @@ import { useUi } from "./store/ui";
 import { FakeBackend, FOLDER, SESSION_ID } from "./test/backend";
 import { resetStores } from "./test/fixtures";
 import { fakeAudio } from "./test/media";
-import { answer, calls, emit, fails } from "./test/tauri";
+import { answer, calls, dragDrop, emit, fails } from "./test/tauri";
 
 vi.mock("@tanstack/react-virtual", () => import("./test/virtual"));
 
@@ -165,6 +165,54 @@ describe("a recording, from 開始 to the saved session", () => {
     // New lines join the ones already there.
     backend.hear("system", "続けます", 8000);
     expect(screen.getByText("続けます")).toBeInTheDocument();
+  });
+});
+
+describe("transcribing a file", () => {
+  it("transcribes a file picked under 開始, with how far into it the text has got", async () => {
+    const user = await launch();
+    await user.click(screen.getByRole("button", { name: "ファイルから文字起こし" }));
+    expect(calls("transcribe_file")).toEqual([{ path: undefined }]);
+
+    // It finishes from the start: no recording's controls, the place in the file instead.
+    expect(await within(deck()).findByText("文字起こし中")).toBeInTheDocument();
+    expect(within(titleBar()).getByText("lecture.mp4")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "停止" })).not.toBeInTheDocument();
+    act(() => emit("finishing://progress", { done: 0, total: 0, doneMs: 754_000, totalMs: 3_600_000 }));
+    expect(within(deck()).getByText(/12:34 \/ 1:00:00/)).toBeInTheDocument();
+    expect(within(deck()).getByRole("progressbar")).toBeInTheDocument();
+
+    // Its times are places in the file, not clock times.
+    backend.hear("file", "では本題に入ります", 754_000);
+    expect(within(rowOf("では本題に入ります")).getByText(/00:12:34/)).toBeInTheDocument();
+    backend.save(3_600_000);
+    expect(await screen.findByRole("button", { name: "新しい録音" })).toBeInTheDocument();
+  });
+
+  it("does nothing when the dialog is cancelled", async () => {
+    backend.picked = null;
+    const user = await launch();
+    await user.click(screen.getByRole("button", { name: "ファイルから文字起こし" }));
+    expect(calls("transcribe_file")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "開始" })).toBeEnabled();
+  });
+
+  it("transcribes a file dropped on the window", async () => {
+    await launch();
+    act(() => dragDrop({ type: "enter", paths: ["C:\\rec\\memo.m4a"] }));
+    expect(screen.getByText("ここにドロップして文字起こし")).toBeInTheDocument();
+    act(() => dragDrop({ type: "drop", paths: ["C:\\rec\\memo.m4a"] }));
+    expect(screen.queryByText("ここにドロップして文字起こし")).not.toBeInTheDocument();
+    await waitFor(() => expect(calls("transcribe_file")).toEqual([{ path: "C:\\rec\\memo.m4a" }]));
+    expect(await within(titleBar()).findByText("memo.m4a")).toBeInTheDocument();
+  });
+
+  it("says why a file can't be transcribed", async () => {
+    answer({ ...backend.commands(), transcribe_file: fails("E_FILE_UNREADABLE", "noAudio") });
+    const user = await launch();
+    await user.click(screen.getByRole("button", { name: "ファイルから文字起こし" }));
+    expect(await screen.findByText("このファイルには音声がありません")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "開始" })).toBeEnabled();
   });
 });
 

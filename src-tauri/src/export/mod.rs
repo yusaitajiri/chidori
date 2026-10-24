@@ -145,8 +145,12 @@ pub fn wall_time(session: &Session, t_ms: u64) -> DateTime<FixedOffset> {
     start + Duration::milliseconds((t_ms - at) as i64)
 }
 
-/// `HH:MM:SS` wall-clock time of a session offset.
+/// `HH:MM:SS` wall-clock time of a session offset; for a session from a file (FR-18), the place in
+/// the file, which is what its times mean.
 pub fn clock(session: &Session, t_ms: u64) -> String {
+    if session.from_file() {
+        return hms(t_ms);
+    }
     wall_time(session, t_ms).format("%H:%M:%S").to_string()
 }
 
@@ -198,6 +202,7 @@ pub fn source_description(session: &Session) -> Vec<String> {
                 SourceId::Mic => "マイク".to_string(),
                 SourceId::System => "システム全体".to_string(),
                 SourceId::App => s.name.clone().or_else(|| s.exe.clone()).unwrap_or_else(|| "アプリ".to_string()),
+                SourceId::File => s.name.clone().unwrap_or_else(|| "ファイル".to_string()),
             };
             format!("{} ({})", s.label, what)
         })
@@ -362,6 +367,22 @@ mod tests {
             ),
             "{md}"
         );
+    }
+
+    #[test]
+    fn a_file_session_gives_places_in_the_file() {
+        let mut s = session(vec![seg("seg_000001", SourceId::File, 754_000, 757_000, "では本題に入ります。")], false);
+        s.sources = vec![SourceInfo {
+            id: SourceId::File,
+            label: "相手".into(),
+            exe: None,
+            device: None,
+            name: Some("lecture.mp4".into()),
+        }];
+        assert_eq!(clock(&s, 754_000), "00:12:34");
+        assert_eq!(source_description(&s), ["相手 (lecture.mp4)"]);
+        let plain = plaintext::plain(&s, &ExportOptions::default());
+        assert!(plain.contains("[00:12:34] では本題に入ります。"), "{plain}");
     }
 
     #[test]

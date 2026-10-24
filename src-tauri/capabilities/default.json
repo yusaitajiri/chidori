@@ -16,6 +16,7 @@
     "allow-watch-app-levels",
     "allow-start-recording",
     "allow-continue-recording",
+    "allow-transcribe-file",
     "allow-stop-recording",
     "allow-cancel-finishing",
     "allow-pause-recording",

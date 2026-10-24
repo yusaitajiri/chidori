@@ -1,6 +1,7 @@
 //! Audio capture and per-source DSP.
 
 pub mod clock;
+pub mod decode;
 pub mod dsp;
 pub mod file_source;
 pub mod level;

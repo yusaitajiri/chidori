@@ -234,6 +234,7 @@ fn stream(
             pad_quiet_stream: false,
             start_ms: 0,
             audio: None,
+            track: None,
         };
         let dsp = dsp::spawn(rx, params, ctx.clone(), job_sink.clone(), ids.clone(), levels.clone());
         let mut src = FileSource::new(*id, wav.to_path_buf(), *channel, t0, speed());

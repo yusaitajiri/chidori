@@ -134,6 +134,7 @@ pub fn run() {
             commands::watch_app_levels,
             commands::start_recording,
             commands::continue_recording,
+            commands::transcribe_file,
             commands::stop_recording,
             commands::cancel_finishing,
             commands::pause_recording,

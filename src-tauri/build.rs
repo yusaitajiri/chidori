@@ -9,6 +9,7 @@ const COMMANDS: &[&str] = &[
     "watch_app_levels",
     "start_recording",
     "continue_recording",
+    "transcribe_file",
     "stop_recording",
     "cancel_finishing",
     "pause_recording",

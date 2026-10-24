@@ -26,6 +26,9 @@ pub enum ErrorCode {
     PdfFailed,
     #[serde(rename = "E_NETWORK")]
     Network,
+    /// A file to transcribe (FR-18) has no sound track, or Windows can't read its format.
+    #[serde(rename = "E_FILE_UNREADABLE")]
+    FileUnreadable,
     #[serde(rename = "E_INTERNAL")]
     Internal,
 }
@@ -44,6 +47,7 @@ impl ErrorCode {
             ErrorCode::HotkeyTaken => "E_HOTKEY_TAKEN",
             ErrorCode::PdfFailed => "E_PDF_FAILED",
             ErrorCode::Network => "E_NETWORK",
+            ErrorCode::FileUnreadable => "E_FILE_UNREADABLE",
             ErrorCode::Internal => "E_INTERNAL",
         }
     }

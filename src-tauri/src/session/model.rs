@@ -10,6 +10,8 @@ pub enum SourceId {
     Mic,
     App,
     System,
+    /// An audio or video file transcribed after the fact (FR-18).
+    File,
 }
 
 impl SourceId {
@@ -18,13 +20,14 @@ impl SourceId {
             SourceId::Mic => "mic",
             SourceId::App => "app",
             SourceId::System => "system",
+            SourceId::File => "file",
         }
     }
 
     /// 相手 sorts before 自分 on ties.
     fn tie_rank(self) -> u8 {
         match self {
-            SourceId::App | SourceId::System => 0,
+            SourceId::App | SourceId::System | SourceId::File => 0,
             SourceId::Mic => 1,
         }
     }
@@ -194,6 +197,11 @@ impl Session {
             TimelineItem::Screenshot(s) => Some(s),
             _ => None,
         })
+    }
+
+    /// Transcribed from a file (FR-18): its times are places in the file, not clock times.
+    pub fn from_file(&self) -> bool {
+        self.sources.iter().any(|s| s.id == SourceId::File)
     }
 
     /// Whether both sides were recorded at some point: 相手 (an app or the system) and 自分 (the mic).

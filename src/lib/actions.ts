@@ -36,6 +36,9 @@ export function reportError(e: unknown, fallbackKey = "failed") {
     case "E_APP_LOOPBACK_UNSUPPORTED":
       ui.toast(t("win11Required"), "error");
       break;
+    case "E_FILE_UNREADABLE":
+      ui.toast(e.message === "noAudio" ? t("fileNoAudio") : e.message === "unsupported" ? t("fileUnsupported") : t("fileUnreadable", { detail: e.message }), "error");
+      break;
     default:
       ui.toast(t(fallbackKey, { detail: e.message }), "error");
   }
@@ -110,6 +113,19 @@ export async function toggleRecording() {
     }
   } catch (e) {
     reportError(e, state === "ready" ? "startFailed" : undefined);
+  }
+}
+
+/**
+ * Transcribes an audio or video file into a new session (FR-18): one dropped on the window, or one
+ * picked in a dialog. The main view follows it as it finishes, then shows it like any session.
+ */
+export async function transcribeFile(path?: string) {
+  if (useRecording.getState().state !== "ready") return;
+  try {
+    if (await commands.transcribeFile(path)) useUi.getState().go("main");
+  } catch (e) {
+    reportError(e, "startFailed");
   }
 }
 

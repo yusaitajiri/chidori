@@ -17,6 +17,7 @@ use crate::asr::worker::{AsrWorker, Job, JobKind, SessionCtx};
 use crate::platform;
 use crate::segmenter::{SegEvent, Segmenter, SegmenterConfig};
 use crate::session::audio::AudioChunk;
+use crate::session::levels::LevelWriter;
 use crate::session::model::SourceId;
 use crate::vad::{EarshotVad, Vad};
 
@@ -125,6 +126,9 @@ pub struct DspParams {
     pub start_ms: u64,
     /// Where the 16 kHz audio goes to be kept (FR-09), if it is.
     pub audio: Option<crossbeam_channel::Sender<crate::session::audio::AudioChunk>>,
+    /// `levels.bin`, written here by stream time for a file read faster than real time (FR-18);
+    /// a live recording's readings are taken by the ticker instead.
+    pub track: Option<Arc<Mutex<LevelWriter>>>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -315,7 +319,16 @@ impl Dsp {
             offset += fl;
             let levels = self.levels.clone();
             let source = self.params.source;
-            self.meter.push(&frame, |db| levels.set(source, db));
+            let at_ms = self.seg.position() * 1000 / TARGET_RATE as u64;
+            let track = self.params.track.as_ref();
+            self.meter.push(&frame, |db| {
+                levels.set(source, db);
+                if let Some(t) = track
+                    && let Err(e) = t.lock().push(at_ms, db, FLOOR_DBFS)
+                {
+                    tracing::warn!("levels.bin: {e}");
+                }
+            });
             let score = self.vad.score(&frame);
             for ev in self.seg.push_frame(&frame, score) {
                 self.on_event(ev);
@@ -491,6 +504,7 @@ mod tests {
             pad_quiet_stream: false,
             start_ms: 0,
             audio: None,
+            track: None,
         };
         let ctx_seen = ctx.clone();
         let handle =

@@ -302,5 +302,14 @@
   "conversation": "会話として録音",
   "conversationShort": "会話",
   "hotkeyOff": "オフ",
-  "hotkeyClear": "オフにする"
+  "hotkeyClear": "オフにする",
+  "srcFile": "ファイル",
+  "transcribeFile": "ファイルから文字起こし",
+  "transcribingFile": "文字起こし中",
+  "dropToTranscribe": "ここにドロップして文字起こし",
+  "dropOneFile": "ファイルは1つずつドロップしてください",
+  "fileNoAudio": "このファイルには音声がありません",
+  "fileUnsupported": "このファイルの形式は読み込めません",
+  "fileUnreadable": "ファイルを開けませんでした: {detail}",
+  "fileBrokeOff": "ファイルを最後まで読めませんでした。読めたところまでを保存します。"
 }

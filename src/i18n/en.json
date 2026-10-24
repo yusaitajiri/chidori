@@ -302,5 +302,14 @@
   "conversation": "Record a conversation",
   "conversationShort": "conversation",
   "hotkeyOff": "Off",
-  "hotkeyClear": "Turn off"
+  "hotkeyClear": "Turn off",
+  "srcFile": "File",
+  "transcribeFile": "Transcribe a file",
+  "transcribingFile": "Transcribing",
+  "dropToTranscribe": "Drop to transcribe",
+  "dropOneFile": "Drop one file at a time",
+  "fileNoAudio": "This file has no sound",
+  "fileUnsupported": "Can't read this file's format",
+  "fileUnreadable": "Couldn't open the file: {detail}",
+  "fileBrokeOff": "Couldn't read the file to the end. What was read is saved."
 }
