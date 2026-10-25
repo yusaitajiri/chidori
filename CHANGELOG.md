@@ -4,11 +4,18 @@ All notable changes are listed here. Versions follow [SemVer](https://semver.org
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-10-24
+## [0.5.0] - 2026-10-25
 
 ### Added
 
 - Transcribe an audio or video file you already have: 「ファイルから文字起こし」 under 開始, or drop the file on the window. Anything Windows plays works (MP4, MOV, MKV, WebM, M4A, MP3, WAV, FLAC, WMA), and Opus. It runs as fast as the PC keeps up, shows how far into the file it has got, and saves a session named after the file whose times are places in the file.
+- Delete the session you are reading from its ⋯ menu, and copy a session straight from its row in 履歴.
+
+### Changed
+
+- A session has the same ⋯ menu wherever it is shown: open, or as a row in 履歴.
+- コピー has a ▾ beside it for 「Agent用にコピー」 and 「Markdownでコピー」, which used to be in ⋯.
+- Projects are managed in 履歴: pick a project in the filter and the page becomes that project's, with a ⋯ to change its name and colour or delete it. 設定 › プロジェクト is gone.
 
 ## [0.4.1] - 2026-10-19
 
