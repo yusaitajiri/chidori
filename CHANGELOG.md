@@ -4,7 +4,9 @@ All notable changes are listed here. Versions follow [SemVer](https://semver.org
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-10-25
+## [0.5.1] - 2026-10-25
+
+0.5.0 was built but never published. Its changes are all here.
 
 ### Added
 

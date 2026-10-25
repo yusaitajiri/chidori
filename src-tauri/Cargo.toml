@@ -1,6 +1,6 @@
 [package]
 name = "chidori"
-version = "0.5.0"
+version = "0.5.1"
 description = "Live transcription with local Whisper"
 authors = ["Yusai Tajiri"]
 license = "MIT"
