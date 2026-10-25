@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import type { Notice } from "../ipc/types";
+import type { Notice, Project } from "../ipc/types";
 
 export type View = "main" | "settings" | "history" | "models" | "session";
 /** A section of 設定, or `index`: the list of sections. */
-export type SettingsTab = "index" | "general" | "audio" | "transcription" | "models" | "screenshots" | "hotkeys" | "output" | "projects";
+export type SettingsTab = "index" | "general" | "audio" | "transcription" | "models" | "screenshots" | "hotkeys" | "output";
 
 export type Toast = { id: number; text: string; level: "info" | "warn" | "error" };
 export type Banner = Notice & { id: number };
@@ -20,6 +20,12 @@ type UiStore = {
   confirmQuit: boolean;
   /** The new-project dialog, with the sessions to put in the project once made (FR-64). */
   newProject?: { sessionIds: string[]; done?: (id: string) => void; n: number };
+  /** The project whose name and colour are being changed. */
+  editingProject?: Project;
+  /** The rename dialog for a session shown as a row, which has no header to rename it in. */
+  renaming?: { id: string; title: string; done?: () => void };
+  /** Sessions waiting for the user to confirm moving them to the Recycle Bin. */
+  deleting?: { ids: string[]; title?: string; done?: () => void };
   go: (view: View, opts?: { tab?: SettingsTab; sessionId?: string }) => void;
   pushBanner: (n: Notice) => void;
   dismissBanner: (id: number) => void;
@@ -28,6 +34,9 @@ type UiStore = {
   setConfirmQuit: (v: boolean) => void;
   setExportFor: (id?: string) => void;
   askNewProject: (sessionIds?: string[], done?: (id: string) => void) => void;
+  setEditingProject: (project?: Project) => void;
+  askRename: (ask?: UiStore["renaming"]) => void;
+  askDelete: (ask?: UiStore["deleting"]) => void;
 };
 
 let nextId = 1;
@@ -61,4 +70,7 @@ export const useUi = create<UiStore>((set) => ({
   setConfirmQuit: (confirmQuit) => set({ confirmQuit }),
   setExportFor: (exportFor) => set({ exportFor }),
   askNewProject: (sessionIds, done) => set({ newProject: sessionIds ? { sessionIds, done, n: nextId++ } : undefined }),
+  setEditingProject: (editingProject) => set({ editingProject }),
+  askRename: (renaming) => set({ renaming }),
+  askDelete: (deleting) => set({ deleting }),
 }));

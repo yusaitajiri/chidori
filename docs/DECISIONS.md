@@ -412,9 +412,14 @@ found a reason to deviate.
   the user picks, not the app's colour, so they are the one exception. A session joins a project from the swatch beside the recording's title, the line
   under a finished session's title, History's row menu (a submenu) or 選択 (a button beside
   削除), each a native menu ending in 「新しいプロジェクト…」. History filters by project with a
-  menu button beside the search, shown only once a project exists; 設定 › プロジェクト lists
-  them to rename, recolour and delete. A new recording starts in no project: one tap on the
-  swatch puts it in one, and a default that carried over would file recordings by surprise.
+  menu button beside the search, shown only once a project exists. **A project's home is
+  履歴, not 設定**: filtered to one, the page is that project's, its square and name in place of
+  「履歴」 and its count beside them, with a ⋯ to change its name and colour (the new-project
+  dialog, filled in) or delete it. A project is a way into the sessions, not a preference, so it
+  is changed where its sessions are shown; 設定 › プロジェクト is gone. The filter menu also ends
+  in 「新しいプロジェクト…」, which opens the new, empty project's page. A new recording starts in
+  no project: one tap on the swatch puts it in one, and a default that carried over would file
+  recordings by surprise.
 - **History is grouped by day** (今日 and 昨日 with the date, then dates) and searchable by title
   and opening words (`SessionSummary.preview`), each row with its title, time, line, opening
   words and length. A recording shorter than 10 s or with no transcript (most likely a test or
@@ -432,9 +437,17 @@ found a reason to deviate.
   own: the finished session's row already holds four buttons in the compact window, and
   continuing is rarer than starting anew. It records with the source the picker holds and opens
   the recording view; while something records, it is greyed out.
-- **A finished session's buttons**: コピー, 書き出し, which opens a dialog to pick Markdown, PDF
-  or Typst (the compact window, too small for it, shows a menu), the ⋯ menu (「Agent用にコピー」,
-  「Markdownでコピー」, フォルダを開く), and 「新しい録音」.
+- **A session has one ⋯ menu** (`lib/sessionMenu.ts`, docs/OBJECTS.md), wherever it is shown, so
+  it offers the same actions open or as a row: 復元 (a crashed session), 続きを録音, フォルダを開く
+  and 削除. A History row, which has no deck or header, adds コピー ▸, 書き出し…, 名前を変更 and
+  プロジェクト ▸. Rename and delete confirm in dialogs shared by both (`Dialogs.tsx`). Deleting
+  the session on screen takes it off: the main view goes back to 開始, a past session to 履歴.
+- **A finished session's buttons**: 再生, コピー ▾, 書き出し, which opens a dialog to pick
+  Markdown, PDF or Typst (the compact window, too small for it, shows a menu), the ⋯ menu, and
+  「新しい録音」. コピー copies plain text and its chevron picks 「Agent用にコピー」 or
+  「Markdownでコピー」, joined into one control the way the camera and its menu are: the three
+  are one action in three formats, so they sit together rather than split between a button and
+  ⋯.
 - **Less text.** Choices have no descriptions under them (the source field is one line,
   「会話として録音」 shows only the mic's name, the export dialog lists formats only, settings
   have no help lines, the wizard's paragraphs are one short line or none), and labels are short

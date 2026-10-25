@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "../ipc/commands";
 import type { SessionSummary } from "../ipc/types";
-import { exportAs, reportError, type ExportKind } from "../lib/actions";
+import { deleteSessions, exportAs, renameSession, reportError, type ExportKind } from "../lib/actions";
 import { dateTimeOf, hms } from "../lib/format";
 import { useRecording } from "../store/recording";
 import { useUi } from "../store/ui";
-import { Button, Dialog, Spinner, Switch } from "./ui";
+import { Button, Dialog, inputClass, Spinner, Switch } from "./ui";
 
 /** Flow D: offer to recover a session that has no end marker. */
 export function RecoveryDialog() {
@@ -155,5 +155,67 @@ export function ExportDialog({ sessionId, onClose }: { sessionId: string; onClos
         ))}
       </div>
     </Dialog>
+  );
+}
+
+/** Renames a session shown as a row (FR-63); an open session renames in its header instead. */
+export function RenameDialog() {
+  const ask = useUi((s) => s.renaming);
+  return ask ? <RenameForm key={ask.id} ask={ask} /> : null;
+}
+
+function RenameForm({ ask }: { ask: { id: string; title: string; done?: () => void } }) {
+  const { t } = useTranslation();
+  const [title, setTitle] = useState(ask.title);
+  const close = () => useUi.getState().askRename(undefined);
+  const save = () => {
+    const next = title.trim();
+    if (!next) return;
+    close();
+    void renameSession(ask.id, next).then(ask.done);
+  };
+  return (
+    <Dialog
+      title={t("rename")}
+      onClose={close}
+      actions={
+        <>
+          <Button onClick={close}>{t("cancel")}</Button>
+          <Button variant="primary" disabled={!title.trim()} onClick={save}>
+            {t("save")}
+          </Button>
+        </>
+      }
+    >
+      <input aria-label={t("newTitle")} className={inputClass} value={title} autoFocus onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()} />
+    </Dialog>
+  );
+}
+
+/** Asks before moving one session, or several, to the Recycle Bin (FR-62). */
+export function DeleteDialog() {
+  const { t } = useTranslation();
+  const ask = useUi((s) => s.deleting);
+  if (!ask) return null;
+  const close = () => useUi.getState().askDelete(undefined);
+  return (
+    <Dialog
+      title={ask.ids.length === 1 && ask.title !== undefined ? t("confirmDelete", { title: ask.title }) : t("confirmDeleteMany", { n: ask.ids.length })}
+      onClose={close}
+      actions={
+        <>
+          <Button onClick={close}>{t("cancel")}</Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              close();
+              void deleteSessions(ask.ids).then(ask.done);
+            }}
+          >
+            {t("delete")}
+          </Button>
+        </>
+      }
+    />
   );
 }

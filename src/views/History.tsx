@@ -5,14 +5,14 @@ import { SessionLine } from "../components/SessionLine";
 import { Button, Dialog, IconButton, inputClass } from "../components/ui";
 import { PageTitle } from "../components/PageTitle";
 import { commands } from "../ipc/commands";
-import type { SessionSummary } from "../ipc/types";
-import { continueRecording, openFolder, reportError } from "../lib/actions";
-import { useRecording } from "../store/recording";
+import type { Project, SessionSummary } from "../ipc/types";
+import { reportError } from "../lib/actions";
 import { dayName, dayOf, dayText, durationText, timeOf } from "../lib/format";
 import { shapeFromActivity } from "../lib/line";
 import { menuText, popupMenu, type MenuEntry } from "../lib/popupMenu";
 import { ProjectMark } from "../components/Projects";
 import { projectEntries } from "../lib/projects";
+import { sessionEntries } from "../lib/sessionMenu";
 import { projectOf, useProjects } from "../store/projects";
 import { useUi } from "../store/ui";
 
@@ -33,7 +33,8 @@ function Tick({ on }: { on: boolean }) {
   );
 }
 
-function Row({ s, onMenu, selecting, checked, onToggle }: { s: SessionSummary; onMenu: () => void; selecting: boolean; checked: boolean; onToggle: () => void }) {
+/** `inProject`: the list is one project's page, whose square is in the title, so rows leave theirs out. */
+function Row({ s, onMenu, selecting, checked, onToggle, inProject }: { s: SessionSummary; onMenu: () => void; selecting: boolean; checked: boolean; onToggle: () => void; inProject: boolean }) {
   const { t } = useTranslation();
   const go = useUi((st) => st.go);
   const two = s.sources.includes("mic") && s.sources.some((id) => id !== "mic");
@@ -52,7 +53,7 @@ function Row({ s, onMenu, selecting, checked, onToggle }: { s: SessionSummary; o
         {selecting && <Tick on={checked} />}
         <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-2.5">
           <span className="flex min-w-0 items-center gap-2">
-            {project && (
+            {project && !inProject && (
               <span title={project.name} className="flex shrink-0">
                 <ProjectMark color={project.color} />
                 <span className="sr-only">{project.name}</span>
@@ -87,20 +88,18 @@ type ProjectFilter = { kind: "all" } | { kind: "none" } | { kind: "project"; id:
 
 /**
  * Past sessions by day, each with its own line; searchable by title and opening words (FR-62,
- * FR-63), and narrowed to one project (FR-64). 選択 picks several to move to the Recycle Bin at
+ * FR-63), and narrowed to one project (FR-64), which makes the page that project's: its name on
+ * top and its own menu to change or delete it. 選択 picks several to move to the Recycle Bin at
  * once, such as all the short and empty ones, or to put in a project.
  */
 export function History() {
   const { t, i18n } = useTranslation();
-  const setExportFor = useUi((s) => s.setExportFor);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
   const [query, setQuery] = useState("");
-  const [deleting, setDeleting] = useState<SessionSummary | null>(null);
-  const [renaming, setRenaming] = useState<SessionSummary | null>(null);
-  const [newTitle, setNewTitle] = useState("");
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
-  const [deletingMany, setDeletingMany] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const confirming = useUi((s) => !!s.deleting);
   const [now] = useState(() => new Date());
   const [chosenFilter, setFilter] = useState<ProjectFilter>({ kind: "all" });
   const projects = useProjects((s) => s.projects);
@@ -124,7 +123,7 @@ export function History() {
     void useProjects.getState().load().catch(() => {});
   }, []);
 
-  // A project changed somewhere (a menu here, the new-project dialog, 設定): reload the rows.
+  // A project changed somewhere (a menu here, the new-project dialog): reload the rows.
   useEffect(
     () =>
       useProjects.subscribe((s, prev) => {
@@ -185,7 +184,7 @@ export function History() {
 
   // Escape leaves selection mode (in the search field it clears the search instead).
   useEffect(() => {
-    if (!selecting || deletingMany) return;
+    if (!selecting || confirming) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || (e.target as HTMLElement).tagName === "INPUT") return;
       setSelecting(false);
@@ -193,30 +192,16 @@ export function History() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selecting, deletingMany]);
+  }, [selecting, confirming]);
 
-  const deleteChosen = async () => {
-    const ids = chosen.map((s) => s.id);
-    setDeletingMany(false);
-    try {
-      const r = await commands.deleteSessions(ids);
-      useUi.getState().toast(t("deletedMany", { n: r.deleted }));
-    } catch (e) {
-      reportError(e, "deleteFailed");
-    }
-    stopSelecting();
-    void refresh();
-  };
-
-  const run = async (f: () => Promise<unknown>, okKey?: string) => {
-    try {
-      await f();
-      if (okKey) useUi.getState().toast(t(okKey));
-    } catch (e) {
-      reportError(e);
-    }
-    void refresh();
-  };
+  const deleteChosen = () =>
+    useUi.getState().askDelete({
+      ids: chosen.map((s) => s.id),
+      done: () => {
+        stopSelecting();
+        void refresh();
+      },
+    });
 
   const assign = (ids: string[], project: string | null) =>
     void useProjects
@@ -230,31 +215,26 @@ export function History() {
       { text: t("allProjects"), checked: filter.kind === "all", action: () => setFilter({ kind: "all" }) },
       ...projects.map((p) => ({ text: menuText(p.name), checked: filter.kind === "project" && filter.id === p.id, action: () => setFilter({ kind: "project", id: p.id }) })),
       { text: t("noProject"), checked: filter.kind === "none", action: () => setFilter({ kind: "none" }) },
+      "separator",
+      // A new project opens as its own page, empty until sessions join it.
+      { text: t("newProjectMenu"), action: () => askNewProject([], (id) => setFilter({ kind: "project", id })) },
     ];
     await popupMenu(entries).catch(reportError);
   };
   const filtered = filter.kind === "project" ? projectOf(projects, filter.id) : undefined;
 
-  const menu = async (s: SessionSummary) => {
+  // The project's own menu, on its page.
+  const projectPageMenu = async (p: Project) => {
     const entries: MenuEntry[] = [
-      ...(s.recoverable ? ([{ text: t("recover"), action: () => void run(() => commands.recoverSession(s.id), "recovered") }, "separator"] satisfies MenuEntry[]) : []),
-      { text: t("continueRecording"), enabled: !s.recoverable && useRecording.getState().state === "ready", action: () => void continueRecording(s.id) },
+      { text: t("editProject"), action: () => useUi.getState().setEditingProject(p) },
       "separator",
-      {
-        text: t("rename"),
-        action: () => {
-          setNewTitle(s.title);
-          setRenaming(s);
-        },
-      },
-      { text: t("project"), items: projectMenu([s.id], s.project) },
-      { text: t("exportDialog"), action: () => setExportFor(s.id) },
-      { text: t("openFolder"), action: () => void openFolder(s.folder) },
-      "separator",
-      { text: t("delete"), action: () => setDeleting(s) },
+      { text: t("deleteProject"), action: () => setDeletingProject(p) },
     ];
     await popupMenu(entries).catch(reportError);
   };
+
+  // The menu the session has when open, plus what its deck and header would hold there.
+  const menu = (s: SessionSummary) => void popupMenu(sessionEntries(s, true, () => void refresh())).catch(reportError);
 
   const dayLabel = (day: string) => {
     const name = dayName(day, now);
@@ -264,14 +244,30 @@ export function History() {
   return (
     <div className="flex h-full flex-col">
       <PageTitle
-        title={t("historyTitle")}
-        sub={sessions && sessions.length > 0 ? t("historyCount", { n: sessions.length }) : undefined}
+        title={
+          filtered ? (
+            <span className="flex min-w-0 items-center gap-2.5 break-words">
+              <ProjectMark color={filtered.color} size={14} />
+              {filtered.name}
+            </span>
+          ) : (
+            t("historyTitle")
+          )
+        }
+        sub={filtered ? t("historyCount", { n: (sessions ?? []).filter((x) => x.project === filtered.id).length }) : sessions && sessions.length > 0 ? t("historyCount", { n: sessions.length }) : undefined}
         action={
-          sessions && sessions.length > 0 ? (
-            <Button variant="ghost" size="sm" onClick={() => (selecting ? stopSelecting() : setSelecting(true))} aria-pressed={selecting}>
-              {selecting ? t("done") : t("select")}
-            </Button>
-          ) : undefined
+          <span className="flex items-center gap-1">
+            {filtered && (
+              <IconButton size="sm" label={t("projectMenu")} aria-haspopup="menu" onClick={() => void projectPageMenu(filtered)}>
+                <Ellipsis size={16} />
+              </IconButton>
+            )}
+            {sessions && sessions.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => (selecting ? stopSelecting() : setSelecting(true))} aria-pressed={selecting}>
+                {selecting ? t("done") : t("select")}
+              </Button>
+            )}
+          </span>
         }
       >
         <div className="mt-2.5 flex gap-1.5">
@@ -333,7 +329,7 @@ export function History() {
             {t("historyEmpty")}
           </div>
         ) : days.length === 0 ? (
-          <div className="animate-fade-in p-8 text-center text-muted">{t("historyNoMatch")}</div>
+          <div className="animate-fade-in p-8 text-center text-muted">{filtered && !query.trim() ? t("projectEmpty") : t("historyNoMatch")}</div>
         ) : (
           days.map(({ day, items }) => {
             const label = dayLabel(day);
@@ -345,7 +341,7 @@ export function History() {
                 </h3>
                 <ul className="space-y-0.5">
                   {items.map((s) => (
-                    <Row key={s.id} s={s} onMenu={() => menu(s)} selecting={selecting} checked={selected.has(s.id)} onToggle={() => toggle(s.id)} />
+                    <Row key={s.id} s={s} onMenu={() => menu(s)} selecting={selecting} checked={selected.has(s.id)} onToggle={() => toggle(s.id)} inProject={!!filtered} />
                   ))}
                 </ul>
               </section>
@@ -367,82 +363,36 @@ export function History() {
             >
               {t("project")}
             </Button>
-            <Button variant="primary" size="lg" disabled={chosen.length === 0} onClick={() => setDeletingMany(true)}>
+            <Button variant="primary" size="lg" disabled={chosen.length === 0} onClick={deleteChosen}>
               {t("delete")}
             </Button>
           </span>
         </div>
       )}
-      {deletingMany && (
+      {deletingProject && (
         <Dialog
-          title={t("confirmDeleteMany", { n: chosen.length })}
-          onClose={() => setDeletingMany(false)}
+          title={t("confirmDeleteProject", { name: deletingProject.name })}
+          onClose={() => setDeletingProject(null)}
           actions={
             <>
-              <Button onClick={() => setDeletingMany(false)}>{t("cancel")}</Button>
-              <Button variant="danger" onClick={() => void deleteChosen()}>
-                {t("delete")}
-              </Button>
-            </>
-          }
-        />
-      )}
-      {deleting && (
-        <Dialog
-          title={t("confirmDelete", { title: deleting.title })}
-          onClose={() => setDeleting(null)}
-          actions={
-            <>
-              <Button onClick={() => setDeleting(null)}>{t("cancel")}</Button>
+              <Button onClick={() => setDeletingProject(null)}>{t("cancel")}</Button>
               <Button
                 variant="danger"
                 onClick={() => {
-                  const id = deleting.id;
-                  setDeleting(null);
-                  void run(() => commands.deleteSession(id), "deleted");
+                  const id = deletingProject.id;
+                  setDeletingProject(null);
+                  void useProjects
+                    .getState()
+                    .remove(id)
+                    .catch((e) => reportError(e, "deleteFailed"));
                 }}
               >
                 {t("delete")}
-              </Button>
-            </>
-          }
-        />
-      )}
-      {renaming && (
-        <Dialog
-          title={t("rename")}
-          onClose={() => setRenaming(null)}
-          actions={
-            <>
-              <Button onClick={() => setRenaming(null)}>{t("cancel")}</Button>
-              <Button
-                variant="primary"
-                disabled={!newTitle.trim()}
-                onClick={() => {
-                  const id = renaming.id;
-                  setRenaming(null);
-                  void run(() => commands.renameSession(id, newTitle.trim()), "saved");
-                }}
-              >
-                {t("save")}
               </Button>
             </>
           }
         >
-          <input
-            aria-label={t("newTitle")}
-            className={inputClass}
-            value={newTitle}
-            autoFocus
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && newTitle.trim()) {
-                const id = renaming.id;
-                setRenaming(null);
-                void run(() => commands.renameSession(id, newTitle.trim()), "saved");
-              }
-            }}
-          />
+          {t("deleteProjectNote")}
         </Dialog>
       )}
     </div>

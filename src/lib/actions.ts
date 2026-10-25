@@ -178,6 +178,49 @@ export async function copy(format: "plain" | "agent" | "markdown", id = currentS
   }
 }
 
+/** Renames a session (FR-63); the main view follows if it shows that session. */
+export async function renameSession(id: string, title: string) {
+  try {
+    await commands.renameSession(id, title);
+    if (useTranscript.getState().sessionId === id) useTranscript.getState().setTitle(title);
+    useUi.getState().toast(t("saved"));
+  } catch (e) {
+    reportError(e, "saveFailed");
+  }
+}
+
+/**
+ * Moves sessions to the Recycle Bin (FR-62). A deleted session can't stay on screen: the main view
+ * goes back to the start, and a past session's view back to 履歴.
+ */
+export async function deleteSessions(ids: string[]) {
+  const ui = useUi.getState();
+  try {
+    if (ids.length === 1) {
+      await commands.deleteSession(ids[0]);
+      ui.toast(t("deleted"));
+    } else {
+      const r = await commands.deleteSessions(ids);
+      ui.toast(t("deletedMany", { n: r.deleted }));
+    }
+  } catch (e) {
+    reportError(e, "deleteFailed");
+  }
+  const shown = useTranscript.getState().sessionId;
+  if (shown && ids.includes(shown) && useRecording.getState().state === "ready") useTranscript.getState().clear();
+  if (ui.view === "session" && ui.viewingSessionId && ids.includes(ui.viewingSessionId)) ui.go("history");
+}
+
+/** Rebuilds a session that ended in a crash from its log (FR-61). */
+export async function recoverSession(id: string) {
+  try {
+    await commands.recoverSession(id);
+    useUi.getState().toast(t("recovered"));
+  } catch (e) {
+    reportError(e, "saveFailed");
+  }
+}
+
 export type ExportKind = "markdown" | "pdf" | "typst";
 
 /** Runs an export; `zip` is for Markdown (a ZIP instead of a folder). */

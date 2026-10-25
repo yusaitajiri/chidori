@@ -5,11 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useElapsed } from "../hooks/useElapsed";
 import { commands } from "../ipc/commands";
 import type { SourceId, WindowInfo } from "../ipc/types";
-import { addCut, continueRecording, copy, exportAs, markCurrentLine, newRecording, openFolder, pauseOrResume, reportError, takeScreenshot, toggleRecording, transcribeFile } from "../lib/actions";
+import { addCut, copy, exportAs, markCurrentLine, newRecording, pauseOrResume, reportError, takeScreenshot, toggleRecording, transcribeFile } from "../lib/actions";
 import { sessionClock, timerText } from "../lib/format";
 import { animate, reducedMotion, stopAnimating, type Animated } from "../lib/frameLoop";
 import { liveLine, mapLine, sessionShape, type Shape } from "../lib/line";
 import { menuText, popupMenu, type MenuEntry } from "../lib/popupMenu";
+import { copyEntries, sessionEntries } from "../lib/sessionMenu";
 import { lineHistory } from "../store/line";
 import { useRecording } from "../store/recording";
 import { useSettings } from "../store/settings";
@@ -788,17 +789,10 @@ function FinishingRow() {
 function ReviewRow({ compact, sessionId, folder, onNew, player }: { compact: boolean; sessionId: string; folder?: string; onNew: boolean; player: Player }) {
   const { t } = useTranslation();
   const setExportFor = useUi((s) => s.setExportFor);
-  const more = async () => {
-    const entries: MenuEntry[] = [
-      { text: t("continueRecording"), enabled: useRecording.getState().state === "ready", action: () => void continueRecording(sessionId) },
-      "separator",
-      { text: t("copyForAgent"), action: () => void copy("agent", sessionId) },
-      { text: t("copyMarkdown"), action: () => void copy("markdown", sessionId) },
-      "separator",
-      { text: t("openFolder"), enabled: !!folder, action: () => void openFolder(folder) },
-    ];
-    await popupMenu(entries).catch(reportError);
-  };
+  const title = useTranscriptStore()((s) => s.title);
+  // The session's menu, as 履歴's rows have it, less what this row and the header already hold.
+  const more = () => void popupMenu(sessionEntries({ id: sessionId, title: title ?? "", folder }, false)).catch(reportError);
+  const copyMenu = () => void popupMenu(copyEntries(sessionId, false)).catch(reportError);
   // 書き出し picks a format in a dialog; the compact window is too small for one, so a menu there.
   const exportMenu = async () => {
     const entries: MenuEntry[] = [
@@ -824,10 +818,16 @@ function ReviewRow({ compact, sessionId, folder, onNew, player }: { compact: boo
           {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
         </button>
       )}
-      <button type="button" className={act} onClick={() => copy("plain", sessionId)}>
-        <Copy size={15} />
-        {t("copy")}
-      </button>
+      {/* コピー copies plain text; its chevron picks the other formats, joined like the camera. */}
+      <span className="flex shrink-0">
+        <button type="button" className={`${act} kk-split-l`} onClick={() => copy("plain", sessionId)}>
+          <Copy size={15} />
+          {t("copy")}
+        </button>
+        <button type="button" className={`${act} kk-split-r`} onClick={copyMenu} aria-haspopup="menu" aria-label={t("copyAs")} title={t("copyAs")}>
+          <ChevronDown size={14} />
+        </button>
+      </span>
       {compact ? (
         <button type="button" className={`${act} !w-9 justify-center !px-0`} onClick={exportMenu} aria-haspopup="menu" aria-label={t("export")} title={t("export")}>
           <FileOutput size={16} />

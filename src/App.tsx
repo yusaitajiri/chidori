@@ -1,12 +1,12 @@
 import { FileAudio } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmQuitDialog, ExportDialog, RecoveryDialog } from "./components/Dialogs";
+import { ConfirmQuitDialog, DeleteDialog, ExportDialog, RecoveryDialog, RenameDialog } from "./components/Dialogs";
 import { Transcript, TranscriptTail } from "./components/LiveTranscript";
 import { Banners, Toasts } from "./components/Notices";
 import { Deck } from "./components/Deck";
 import { LiveHeader } from "./components/LiveHeader";
-import { NewProjectDialog } from "./components/Projects";
+import { EditProjectDialog, NewProjectDialog } from "./components/Projects";
 import { SessionHeader } from "./components/SessionHeader";
 import { StartScreen } from "./components/StartScreen";
 import { TitleBar } from "./components/TitleBar";
@@ -237,6 +237,9 @@ export default function App() {
       <ConfirmQuitDialog />
       {exportFor && <ExportDialog sessionId={exportFor} onClose={() => setExportFor(undefined)} />}
       <NewProjectDialog />
+      <EditProjectDialog />
+      <RenameDialog />
+      <DeleteDialog />
     </div>
   );
 }

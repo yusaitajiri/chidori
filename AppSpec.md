@@ -116,15 +116,15 @@ items (section 19).
 | FR-34 | Screenshots | The camera's menu picks what screenshots take: the recorded app's window, the cursor's screen or all screens (remembered as the setting), or any open window, for the rest of the recording. |
 | FR-40 | Transcript | Live list; auto-scroll pauses when the user scrolls up and 最新へ appears. |
 | FR-41 | Transcript | Edit or delete a line after Stop; every export uses the edits. |
-| FR-50 | Copy | コピー copies plain text; settings choose times and labels. Markdown copy is in the … menu. |
+| FR-50 | Copy | コピー copies plain text; settings choose times and labels. Its chevron (コピー ▾) copies for an agent or as Markdown. |
 | FR-51 | Copy | 「Agent用にコピー」 copies the cleanup prompt followed by the transcript. |
 | FR-52 | Sessions | On Stop, `transcript.md` and `images/` are saved in the session folder, which opens with one click. |
 | FR-53 | Export | PDF with Japanese fonts and full-width screenshots; also Typst source and Markdown (folder or ZIP). |
 | FR-60 | Sessions | Each session is one folder under the output root (default `Documents\Chidori`). |
 | FR-61 | Sessions | A crash-safe event log; the next launch offers recovery (Flow D). |
-| FR-62 | Sessions | History, grouped by day: open, re-export, delete one or several (to the Recycle Bin). |
+| FR-62 | Sessions | History, grouped by day: open, re-export, delete one or several (to the Recycle Bin). A session offers the same ⋯ menu open and as a row in History, 削除 included. |
 | FR-63 | Sessions | Rename a session; the default title is the source app's name. |
-| FR-64 | Sessions | Projects: named, coloured groups of sessions. A session joins one from its header (also while recording), History's row menu or a multi-selection; History filters by project; 設定 › プロジェクト renames, recolours and deletes them (deleting keeps the recordings). |
+| FR-64 | Sessions | Projects: named, coloured groups of sessions. A session joins one from its header (also while recording), History's row menu or a multi-selection; History filters by project, which turns it into the project's page, whose ⋯ renames, recolours and deletes it (deleting keeps the recordings). |
 | FR-70 | Models | The first-run wizard recommends a model and downloads it with resume and checksum check. |
 | FR-71 | Models | Model manager: download, import from a file, delete, switch; size and speed tier shown. The recommended models and the ones installed are listed; the rest open from ほかのモデル. |
 | FR-72 | Models | A 10-second benchmark rates how well the PC runs a model. |
@@ -149,8 +149,8 @@ for UI changes.
   session (header, transcript, the session's line, copy and export). The recording's title
   renames on a click; its source is a dropdown, where a pick switches the source (FR-17). The
   compact window has no room for the header: there the title bar's 録音中 opens a native menu.
-- **Rare actions** (Markdown copy, Agent用, exports, history, settings) sit in the … menu, a
-  native popup so it fits the compact window.
+- **Rare actions** sit in native popup menus, so they fit the compact window: a session's ⋯
+  (続きを録音, フォルダを開く, 削除, the same in History's rows) and コピー ▾ (Agent用, Markdown).
 - **Errors** are a banner at the top with one action, e.g. 「マイクへのアクセスがオフです [設定を開く]」
   opening `ms-settings:privacy-microphone`. Errors are on the brand's brick tint and warnings on
   its ochre, always with an icon and words, since 朱 sits close to both.
