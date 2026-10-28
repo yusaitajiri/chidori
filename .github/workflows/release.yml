@@ -13,10 +13,11 @@ jobs:
     env:
       # Portable CPU code (AVX2), never the runner's own instruction set.
       GGML_NATIVE: "OFF"
-      # Signs the update bundle (section 17). The build fails without them once the updater
-      # is enabled, rather than shipping a release that installed copies can't update to.
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      # Signs the installer for the updater (section 17). The key is the one the Tauri build
+      # used, so installed copies of either kind accept the update; `xtask dist` checks the
+      # signature against the app's public key before anything is published.
+      CARGO_PACKAGER_SIGN_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      CARGO_PACKAGER_SIGN_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - run: git config --global core.longpaths true
       - uses: actions/checkout@v7.0.1
@@ -25,11 +26,6 @@ jobs:
       - name: Short cargo target dir
         shell: pwsh
         run: '"CARGO_TARGET_DIR=$([IO.Path]::GetFullPath("$env:GITHUB_WORKSPACE\..\t"))" >> $env:GITHUB_ENV'
-      - uses: pnpm/action-setup@v6.1.0
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: lts/*
-          cache: pnpm
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.1
@@ -39,19 +35,16 @@ jobs:
           cache: true
       - uses: Swatinem/rust-cache@v2.9.2
         with:
-          workspaces: src-tauri -> ../../t
-      - run: pnpm install --frozen-lockfile
-      # The script adds the Vulkan feature and bundles the Khronos loader (vulkan-1.dll) next
-      # to the exe, so the app also starts on PCs without a GPU driver.
-      - uses: tauri-apps/tauri-action@action-v1.0.0
+          workspaces: ". -> ../t"
+      - run: cargo install cargo-packager --locked --version 0.11.8
+      # The GPU build with the Khronos Vulkan loader beside the exe, the licence list, the NSIS
+      # installer, its signature and latest.json for the updater.
+      - run: cargo xtask dist
+      - name: Draft the release
+        shell: bash
         env:
-          # Creates the release and uploads the installer, its signature and latest.json.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tauriScript: node scripts/tauri-gpu.mjs
-          tagName: ${{ github.ref_name }}
-          releaseName: Chidori ${{ github.ref_name }}
-          releaseBody: |
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTES: |
             Windows 10/11（64ビット）用です。下の `Chidori_…_x64-setup.exe` をダウンロードして開いてください。
             「Windows によって PC が保護されました」と表示されたら、**詳細情報** → **実行** を押します（インストーラーはまだコード署名されていません）。
             使い方は [README](https://github.com/${{ github.repository }}#readme) をご覧ください。
@@ -59,6 +52,7 @@ jobs:
             For Windows 10/11 (64-bit). Download `Chidori_…_x64-setup.exe` below and open it.
             If Windows says "Windows protected your PC", click **More info**, then **Run anyway** (the installer isn't code-signed yet).
             See the [English README](https://github.com/${{ github.repository }}/blob/main/README.en.md) for the full guide.
-          releaseDraft: true
-          uploadUpdaterJson: true
-          updaterJsonPreferNsis: true
+        run: |
+          dist="$CARGO_TARGET_DIR/dist"
+          gh release create "$GITHUB_REF_NAME" --draft --title "Chidori $GITHUB_REF_NAME" --notes "$NOTES" \
+            "$dist"/*-setup.exe "$dist"/*-setup.exe.sig "$dist"/latest.json

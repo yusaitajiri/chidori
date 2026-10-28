@@ -85,50 +85,46 @@ To change the app's language later: Settings → General → Language. If your m
 
 ## For developers
 
-Tauri 2 + React + TypeScript, Rust backend with whisper.cpp (`whisper-rs`) and WASAPI capture. The full spec is [AppSpec.md](AppSpec.md); design choices are in [docs/DECISIONS.md](docs/DECISIONS.md).
+All Rust: the UI is [Iced](https://iced.rs) (`crates/app`), and capture, transcription, sessions and export are `crates/core`, with whisper.cpp (`whisper-rs`) and WASAPI capture. The full spec is [AppSpec.md](AppSpec.md); design choices are in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ### Prerequisites (Windows 10/11 x64)
 
 - Rust (see the toolchain version in `.github/workflows/ci.yml`) with the MSVC build tools (Visual Studio 2022 Build Tools, "Desktop development with C++")
-- Node.js LTS and pnpm (`corepack enable`)
 - CMake (comes with the Visual Studio C++ workload)
 - For GPU builds: the Vulkan SDK (`winget install KhronosGroup.VulkanSDK --accept-package-agreements --accept-source-agreements`) and LLVM for bindgen (`winget install LLVM.LLVM`)
+- For the installer: `cargo install cargo-packager --locked`
 
 ### Run and test
 
 ```sh
-pnpm install
-pnpm tauri dev          # CPU build
-pnpm dev:gpu            # Vulkan build (uses a short cargo target dir, %USERPROFILE%\.kt)
-pnpm lint && pnpm typecheck && pnpm test
-cd src-tauri && cargo test
+cargo run -p chidori                          # CPU build
+cargo run -p chidori --features gpu-vulkan    # Vulkan build: set CARGO_TARGET_DIR=%USERPROFILE%\.kt first
+cargo test --workspace
+cargo test -p chidori preview -- --ignored --test-threads 1   # draws every screen to <target>/previews/
 ```
 
-The integration harness (streaming accuracy and latency against fixture recordings) is described in `src-tauri/tests/pipeline.rs` and [tests/fixtures/README.md](tests/fixtures/README.md).
+Vulkan builds need a short target folder: whisper.cpp's shader build otherwise passes Windows' 260-character path limit.
+
+The integration harness (streaming accuracy and latency against fixture recordings) is described in `crates/core/tests/pipeline.rs` and [tests/fixtures/README.md](tests/fixtures/README.md).
 
 ### Build the installer
 
 ```sh
-pnpm build:gpu
+cargo xtask dist
 ```
 
-This builds the Vulkan release, downloads the Khronos Vulkan loader (pinned SHA-256) and bundles it next to the exe, collects the licences of every bundled crate and package into `licenses\THIRD-PARTY-NOTICES.txt`, and writes `Chidori_<version>_x64-setup.exe` under `%USERPROFILE%\.kt\release\bundle\nsis\`.
+This builds the Vulkan release, downloads the Khronos Vulkan loader (pinned SHA-256) and bundles it next to the exe, collects the licences of every bundled crate, font and icon set into `licenses\THIRD-PARTY-NOTICES.txt`, and writes `Chidori_<version>_x64-setup.exe` under `<target>\dist\`. With `CARGO_PACKAGER_SIGN_PRIVATE_KEY` (and its password) set, it also signs the installer for the updater and checks the signature against the app's key.
 
 ### Releasing
 
-One-time setup (the update check stays off until this is done):
-
-1. Push this repository to GitHub as a **public** repository named `chidori` (updates are downloaded from its releases without a token).
-2. Generate the updater keys and choose a password. In PowerShell: `npm run tauri signer generate -- -w "$env:USERPROFILE\.tauri\kikitori.key"` (give a full path: the Tauri CLI does not expand `~`).
-3. Run `node scripts/enable-updater.mjs <your-github-user>` and commit the change to `src-tauri/tauri.conf.json`.
-4. In the repository settings, add the Actions secrets `TAURI_SIGNING_PRIVATE_KEY` (the contents of `kikitori.key`) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Keep the key and its password safe: without them, installed copies can't be updated.
+The updater checks `latest.json` in the newest GitHub release of this repository, and only installs an installer signed with the release key (its public half is `crates/core/src/update.pub`). The repository's Actions secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` hold that key and its password; keep them safe, because without them installed copies can't be updated.
 
 Each release:
 
-1. Update `version` in `src-tauri/tauri.conf.json` (also `package.json` and `src-tauri/Cargo.toml`) and move the `Unreleased` notes in [CHANGELOG.md](CHANGELOG.md) under the new version.
-2. Commit, then tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
-3. The `release` workflow builds the installer, the signed update bundle and `latest.json`, and opens a **draft** release. Check it, then publish it; installed copies see the update within a day.
+1. Update `version` in the workspace `Cargo.toml` and move the `Unreleased` notes in [CHANGELOG.md](CHANGELOG.md) under the new version.
+2. Commit, then tag and push: `git tag v0.6.0 && git push origin v0.6.0`.
+3. The `release` workflow builds the installer, its signature and `latest.json`, and opens a **draft** release. Check it, then publish it; installed copies see the update within a day.
 
 ## License
 
-[MIT](LICENSE). Whisper models are downloaded from Hugging Face under their own licenses (MIT, or Apache-2.0 for kotoba-whisper). The bundled Vulkan loader is © The Khronos Group under Apache-2.0 (see `licenses\VulkanRT-License.txt` in the install folder). The licenses of whisper.cpp, Typst and every other crate and package inside the app are in the same `licenses` folder.
+[MIT](LICENSE). Whisper models are downloaded from Hugging Face under their own licenses (MIT, or Apache-2.0 for kotoba-whisper). The bundled Vulkan loader is © The Khronos Group under Apache-2.0 (see `licenses\VulkanRT-License.txt` in the install folder). The licenses of whisper.cpp, Typst, the fonts, the icons and every other crate inside the app are in the same `licenses` folder.
