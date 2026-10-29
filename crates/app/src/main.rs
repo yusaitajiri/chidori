@@ -1,0 +1,167 @@
+//! Chidori: live transcription with local Whisper. The window is Iced; everything it shows comes
+//! from `chidori-core`.
+
+// No console window in release builds.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod actions;
+mod app;
+mod bridge;
+mod i18n;
+mod icons;
+mod model;
+mod native;
+#[cfg(test)]
+mod preview;
+mod screens;
+mod theme;
+mod updater;
+mod widgets;
+
+use std::sync::Arc;
+
+use chidori_core::asr::worker::AsrWorker;
+use chidori_core::events::{self, Notice, NoticeLevel};
+use chidori_core::host::{AppHandle, Paths};
+use chidori_core::state::{self, AppHost, AppState};
+use chidori_core::{asr, migrate, net, platform, recorder};
+
+fn main() -> iced::Result {
+    // Before anything touches Vulkan (section 8).
+    asr::engine::disable_vulkan_implicit_layers();
+    draw_with_dx12();
+    net::ensure_crypto_provider();
+    bridge::init();
+    // A second launch shows the running window and leaves (FR-91).
+    if !native::window::single_instance() {
+        return Ok(());
+    }
+    // Before anything opens a file in the app's folders.
+    let migrated = migrate::app_folders();
+
+    let mut paths = Paths::system();
+    // An installed copy has its resources beside the exe; a dev build reads them from the crate.
+    if cfg!(debug_assertions) && !paths.resources.join(chidori_core::models::benchmark::CLIP).exists() {
+        paths.resources = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    }
+    let _log = init_logging(&paths);
+    asr::engine::install_logging_hooks();
+    tracing::info!(
+        "Chidori {} starting (Windows build {}, GPU backend compiled: {})",
+        env!("CARGO_PKG_VERSION"),
+        platform::os_build(),
+        asr::engine::gpu_compiled()
+    );
+    for line in &migrated {
+        tracing::info!("{line}");
+    }
+
+    let core = AppHandle::new(paths, env!("CARGO_PKG_VERSION"), Arc::new(bridge::Events), Arc::new(bridge::AppShell));
+    log_panics(core.clone());
+    let worker = AsrWorker::spawn(Arc::new(AppHost { app: core.clone() }));
+    core.manage(AppState::new(&core, worker));
+    bridge::set_core(core.clone());
+    let st = core.state();
+    state::check_gpu_crash_marker(&core, st);
+    let locale = st.settings.read().locale;
+    i18n::set_locale(locale);
+
+    native::menu::init();
+    native::tray::create(locale);
+    native::hotkeys::init();
+    native::hotkeys::register_all(&core);
+    recorder::spawn_ticker(core.clone());
+
+    if cpu_supported() {
+        st.load_selected_model();
+    } else {
+        tracing::error!("CPU lacks AVX2; transcription is unavailable");
+        events::notice(&core, Notice::new(NoticeLevel::Error, "E_INTERNAL", "cpuUnsupported"));
+    }
+    updater::check_on_launch(&core);
+
+    let result = app::run();
+    st.worker.shutdown();
+    result
+}
+
+/// The window draws through wgpu on DirectX 12 on Windows: through Vulkan it took about 45 MB
+/// more memory for the same frames (DECISIONS → Build and toolchain). Iced only reads the
+/// backend from `WGPU_BACKEND`, so it is set here unless the user set it; where DX12 can't start,
+/// Iced falls back to drawing on the CPU.
+fn draw_with_dx12() {
+    if cfg!(windows) && std::env::var_os("WGPU_BACKEND").is_none() {
+        // SAFETY: called first thing in `main`, before any other thread exists.
+        unsafe { std::env::set_var("WGPU_BACKEND", "dx12") };
+    }
+}
+
+/// Logs to `logs\chidori.log` (a new file each day, five kept) and, in dev builds, the console.
+fn init_logging(paths: &Paths) -> Option<tracing_appender::non_blocking::WorkerGuard> {
+    use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::fmt::time::LocalTime;
+    use tracing_subscriber::prelude::*;
+
+    // whisper.cpp and the windowing crates are chatty at info level. `CHIDORI_LOG` overrides it
+    // (`CHIDORI_LOG=debug`) for a closer look.
+    let filter = || {
+        EnvFilter::try_from_env("CHIDORI_LOG").unwrap_or_else(|_| {
+            EnvFilter::new(
+                "info,whisper_rs=warn,wasapi=warn,reqwest=warn,wgpu_core=warn,wgpu_hal=warn,naga=warn,iced_wgpu=warn,                 iced_winit=warn",
+            )
+        })
+    };
+    let file = tracing_appender::rolling::Builder::new()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("chidori")
+        .filename_suffix("log")
+        .max_log_files(5)
+        .build(&paths.logs);
+    let (writer, guard) = match file {
+        Ok(f) => {
+            let (w, g) = tracing_appender::non_blocking(f);
+            (Some(w), Some(g))
+        }
+        Err(e) => {
+            eprintln!("log file unavailable: {e}");
+            (None, None)
+        }
+    };
+    let file_layer = writer.map(|w| {
+        tracing_subscriber::fmt::layer()
+            .with_writer(w)
+            .with_ansi(false)
+            .with_timer(LocalTime::rfc_3339())
+            .with_filter(filter())
+    });
+    let console = cfg!(debug_assertions).then(|| tracing_subscriber::fmt::layer().with_filter(filter()));
+    let _ = tracing_subscriber::registry().with(file_layer).with(console).try_init();
+    guard
+}
+
+/// The release build targets AVX2 (section 17 notes); older CPUs would crash in whisper.cpp.
+fn cpu_supported() -> bool {
+    #[cfg(target_arch = "x86_64")]
+    {
+        std::arch::is_x86_feature_detected!("avx2") && std::arch::is_x86_feature_detected!("fma")
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        true
+    }
+}
+
+/// A panic anywhere is logged and the active session's log is flushed (section 16).
+fn log_panics(app: AppHandle) {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        tracing::error!("panic: {info}");
+        if let Some(st) = app.try_state()
+            && let Some(guard) = st.recorder.try_lock()
+            && let recorder::Phase::Recording(active) = &*guard
+        {
+            let _ = active.store.log.sync();
+        }
+        default(info);
+    }));
+}

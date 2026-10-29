@@ -27,11 +27,6 @@ jobs:
       - name: Short cargo target dir
         shell: pwsh
         run: '"CARGO_TARGET_DIR=$([IO.Path]::GetFullPath("$env:GITHUB_WORKSPACE\..\t"))" >> $env:GITHUB_ENV'
-      - uses: pnpm/action-setup@v6.1.0
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: lts/*
-          cache: pnpm
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.1
@@ -43,20 +38,10 @@ jobs:
           cache: true
       - uses: Swatinem/rust-cache@v2.9.2
         with:
-          workspaces: src-tauri -> ../../t
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      # The Tauri macros embed the built frontend, so cargo needs dist/.
-      - run: pnpm build
-      - name: cargo fmt
-        working-directory: src-tauri
-        run: cargo fmt --check
+          workspaces: ". -> ../t"
+      - run: cargo fmt --all --check
       - name: cargo clippy (the GPU build that ships)
-        working-directory: src-tauri
-        run: cargo clippy --all-targets --features gpu-vulkan -- -D warnings
+        run: cargo clippy --workspace --all-targets --features chidori/gpu-vulkan -- -D warnings
       - name: cargo test
-        working-directory: src-tauri
         # CPU build: the runner has no GPU driver.
-        run: cargo test
+        run: cargo test --workspace

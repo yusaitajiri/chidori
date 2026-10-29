@@ -10,20 +10,15 @@ yarn-error.log*
 pnpm-debug.log*
 .pnpm-store/
 
-# ---- Rust / Tauri ----
+# ---- Rust ----
 target/
-src-tauri/target/
 **/*.rs.bk
 *.pdb
 
-# Tauri build output and generated bindings
-src-tauri/gen/
-src-tauri/WixTools/
-
-# Khronos Vulkan loader, fetched by scripts/tauri-gpu.mjs at build time
-src-tauri/resources/vulkan/
-# Third-party licence list, written by scripts/licenses.mjs at build time
-src-tauri/resources/licenses/THIRD-PARTY-NOTICES.txt
+# Khronos Vulkan loader, fetched by `cargo xtask dist` at build time
+crates/app/resources/vulkan/
+# Third-party licence list, written by `cargo xtask dist` (or `notices`) at build time
+crates/app/resources/licenses/THIRD-PARTY-NOTICES.txt
 
 # Updater signing keys - never commit these
 *.key
@@ -64,6 +59,8 @@ coverage/
 # ---- Generated test fixtures (see tests/fixtures/README.md) ----
 tests/fixtures/generated/
 tests/fixtures/cache/
+
+TO-IMPROVE.md
 
 # Copied from @yusai/kamon-react by brand-sync on install
 .claude/skills/brand-ui/

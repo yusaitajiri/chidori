@@ -20,20 +20,12 @@ jobs:
     steps:
       - run: git config --global core.longpaths true
       - uses: actions/checkout@v7.0.1
-      - uses: pnpm/action-setup@v6.1.0
-      - uses: actions/setup-node@v7.0.0
-        with:
-          node-version: lts/*
-          cache: pnpm
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.98.1
       - uses: Swatinem/rust-cache@v2.9.2
         with:
-          workspaces: src-tauri
           key: nightly
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
       - name: Install ffmpeg
         run: choco install ffmpeg --no-progress -y
       # LibriVox MP3s (checked against pinned SHA-256s) and the base-q5 model.
@@ -46,10 +38,8 @@ jobs:
       - name: Build fixtures
         run: python tests/fixtures/build_fixtures.py
       - name: Download base-q5
-        working-directory: src-tauri
-        run: cargo run --release --example download_model -- base-q5 "${{ runner.temp }}/models"
+        run: cargo run --release -p chidori-core --example download_model -- base-q5 "${{ runner.temp }}/models"
       - name: Integration tests (CPU)
-        working-directory: src-tauri
         env:
           CHIDORI_TEST_MODEL: ${{ runner.temp }}/models/ggml-base-q5_1.bin
-        run: cargo test --release --test pipeline -- --ignored --nocapture --test-threads 1
+        run: cargo test --release -p chidori-core --test pipeline -- --ignored --nocapture --test-threads 1

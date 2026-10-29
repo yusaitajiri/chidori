@@ -2,8 +2,9 @@
 
 Chidori is a Windows desktop app that transcribes live audio (one app, the whole system, or the
 mic) with local Whisper, drops screenshots into the transcript where they were taken, and exports
-Markdown, PDF and Typst. Tauri 2 + React + TypeScript in `src/`, Rust in `src-tauri/`, whisper.cpp
-through `whisper-rs`, WASAPI capture.
+Markdown, PDF and Typst. All Rust: the UI is Iced in `crates/app`, everything else (capture,
+transcription, sessions, models, export) is `crates/core`, whisper.cpp through `whisper-rs`,
+WASAPI capture.
 
 ## Read first
 
@@ -12,63 +13,66 @@ through `whisper-rs`, WASAPI capture.
 - `docs/DECISIONS.md` holds every choice the spec leaves open and every deviation from it. Where
   the spec is silent, pick the simplest option that keeps the UI one-tap simple and add a line
   there. When you change something the spec defines, update the spec section too.
-- The look is the kamon brand, from `@yusai/kamon-react` (the `kamon-brand` repository, pinned to
-  a `react-v…` tag): a warm grey ground, ink, and Chidori's one colour, 朱. For any UI work, use
-  the brand-ui skill: it has the kamon brand rules for this app. Other agents read
-  `.claude/skills/brand-ui/SKILL.md` (copied by `brand-sync` on install). Read
+- The look is the kamon brand (the `kamon-brand` repository): a warm grey ground, ink, and
+  Chidori's one colour, 朱. For any UI work, use the brand-ui skill: it has the kamon brand rules.
+  Other agents read `.claude/skills/brand-ui/SKILL.md` (copied by `brand-sync` on `pnpm install`,
+  the one use of Node here; `pnpm brand` copies the kit's tokens, logos and icon into the app). The skill speaks of the React kit; in this app the same rules are applied in
+  Rust: the tokens, logos and fonts are vendored in `crates/app/brand/`, `build.rs` turns
+  `tokens.json` into constants, and `crates/app/src/widgets.rs` holds the kit's components. Read
   `docs/DECISIONS.md` → UI for how the app applies it.
 
 ## Commands
 
-Windows 10/11 x64 with the MSVC build tools, Rust (the version in `.github/workflows/ci.yml`),
-Node LTS and pnpm (`corepack enable`). Install with pnpm, never `npm install` (the lockfile is
-`pnpm-lock.yaml`); `npm run <script>` is fine for running scripts. GPU builds also need the
-Vulkan SDK and LLVM (see `README.en.md` → For developers).
+Windows 10/11 x64 with the MSVC build tools and Rust (the version in `.github/workflows/ci.yml`).
+GPU builds also need the Vulkan SDK and LLVM (see `README.en.md` → For developers).
 
 ```sh
-pnpm install
-pnpm tauri dev    # CPU build
-pnpm dev:gpu      # Vulkan build
-pnpm build:gpu    # the release installer, as CI builds it
+cargo run -p chidori                          # CPU build
+cargo run -p chidori --features gpu-vulkan    # Vulkan build
+cargo xtask dist                              # the release installer, as CI builds it
 ```
 
 Vulkan builds need a short cargo target dir, or whisper.cpp's shader build passes Windows'
-260-character path limit: `dev:gpu` and `build:gpu` use `%USERPROFILE%\.kt`. Set
-`CARGO_TARGET_DIR` to it for any cargo command with `--features gpu-vulkan`.
+260-character path limit: set `CARGO_TARGET_DIR=%USERPROFILE%\.kt` for any cargo command with
+`--features gpu-vulkan` (and for `xtask dist`). `xtask dist` needs `cargo install cargo-packager`.
 
 Before you finish, run what CI runs:
 
 ```sh
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
-cd src-tauri
-cargo fmt --check
-cargo clippy --all-targets --features gpu-vulkan -- -D warnings
-cargo test
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --features chidori/gpu-vulkan -- -D warnings
+cargo test --workspace
 ```
 
-The streaming accuracy tests in `src-tauri/tests/pipeline.rs` are `#[ignore]`d; its header and
+To see a screen without opening the app, write a preview test with `crate::preview::{app, shot}`
+(`crates/app/src/preview.rs`) and run it with `cargo test -p chidori <name> -- --ignored
+--test-threads 1`: it draws the real view, light and dark, into `<target>/previews/`.
+
+The streaming accuracy tests in `crates/core/tests/pipeline.rs` are `#[ignore]`d; its header and
 `tests/fixtures/README.md` explain how to build the fixtures and run them. Partial (grey) text
 only runs on the GPU, so its tests need `--features gpu-vulkan`.
 
 ## Conventions
 
 - Code, comments, commit messages and docs are in English. UI text is Japanese first, English
-  second: every string goes through i18next with keys in both `src/i18n/ja.json` and
-  `src/i18n/en.json` (a test checks they match).
+  second: every string goes through `crates/app/src/i18n.rs` with keys in both
+  `crates/app/i18n/ja.json` and `crates/app/i18n/en.json` (a test checks they match).
 - The README is the exception: `README.md` is Japanese and `README.en.md` is its English twin.
   Change both together; the developer sections live only in the English one.
 - Nothing the user records leaves the PC. The only network use is model downloads and the daily
   update check; keep it that way.
-- Rust is the source of truth for IPC. The TypeScript in `src/ipc/` is written by hand to match,
-  with camelCase fields. A new command also needs its name in `src-tauri/build.rs` and
-  `allow-<command>` in `src-tauri/capabilities/default.json`.
+- The UI never does the core's work: what it asks of the core is a function in
+  `crates/core/src/ops.rs` (run off the UI thread with `app::call`), and what the core tells it is
+  an `events::Event`. Settings and state files keep the JSON layout the Tauri build wrote, so
+  installed copies carry them over.
 - OS-specific code stays behind the traits in spec section 6 (`AudioSource`, `ScreenCapturer`,
   `AudioAppLister`), so a macOS port only adds files.
-- Library APIs drift: read the current docs before using a crate or plugin. Drift-prone crates
-  are pinned with `=`; both lockfiles are committed.
+- Library APIs drift: read the current docs (or the crate's source under `~/.cargo/registry`)
+  before using a crate. Drift-prone crates (Iced, the tray and hotkey crates) are pinned with `=`;
+  the lockfile is committed.
 - Never invent model URLs, SHA-256 hashes or file sizes; take them from the source.
 - rustfmt uses `max_width = 120`. Files are LF (`.gitattributes`).
-- Exports are snapshot-tested with `insta` (`src-tauri/src/export/snapshots/`). Check a changed
+- Exports are snapshot-tested with `insta` (`crates/core/src/export/snapshots/`). Check a changed
   snapshot before accepting it.
 - Comments say why, not what. Match the code around you.
 - A commit's subject is one imperative line saying what changed for the user, for example

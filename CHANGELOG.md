@@ -1,8 +1,13 @@
 # Changelog
 
-All notable changes are listed here. Versions follow [SemVer](https://semver.org/); `src-tauri/tauri.conf.json` holds the current version.
+All notable changes are listed here. Versions follow [SemVer](https://semver.org/); the workspace `Cargo.toml` holds the current version.
 
 ## [Unreleased]
+
+### Changed
+
+- Chidori is now drawn natively instead of in a web view, and is lighter: about 40 MB less memory while it waits, and about half the CPU while it draws the line during a recording. It looks and works as before.
+- Updates install over the previous version as before; settings, models and recordings stay where they were.
 
 ## [0.5.1] - 2026-10-25
 

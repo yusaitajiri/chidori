@@ -4,7 +4,7 @@ Oct 2, 2026 · @Yusai Tajiri · trimmed to the shipped app on 2026-10-05
 
 ## 1. How to use this spec
 
-This spec says what Chidori does and why. The code holds the details: exact parameters, IPC
+This spec says what Chidori does and why. The code holds the details: exact parameters, event
 types, settings keys, the model catalog. Where the two disagree, fix whichever is wrong.
 `docs/DECISIONS.md` records every choice the spec left open and every deviation from it, with
 the reason; `AGENTS.md` has the build and contribution rules.
@@ -133,7 +133,7 @@ items (section 19).
 | FR-92 | System | Configurable hotkeys (Start/Stop, screenshot, important mark, cut); one that fails to register is reported in Settings. |
 | FR-93 | System | Closing the window hides it to the tray while recording or finishing, and quits otherwise. Quitting while recording asks first. |
 | FR-94 | System | Compact and expanded layouts (expanded by default), an always-on-top pin (off by default), remembered window position. |
-| FR-95 | System | Update check at most once a day through the Tauri updater. |
+| FR-95 | System | Update check at most once a day; installing asks first. |
 
 ## 5. UI and UX
 
@@ -155,9 +155,10 @@ for UI changes.
   opening `ms-settings:privacy-microphone`. Errors are on the brand's brick tint and warnings on
   its ochre, always with an icon and words, since 朱 sits close to both.
 - **Screenshot confirmation** is a toast; with the window hidden, a silent Windows notification.
-- **Light and dark** follow Windows; motion honours `prefers-reduced-motion`. Every icon button
-  has an `aria-label` and the UI is keyboard reachable.
-- **Text** is Japanese first, English second, all through i18next (`src/i18n/`). The first launch
+- **Light and dark** follow Windows. Every icon button names itself in a tooltip. Screen readers
+  and keyboard navigation are not supported yet (DECISIONS → UI).
+- **Text** is Japanese first, English second, all through `crates/app/src/i18n.rs`
+  (`crates/app/i18n/`). The first launch
   is in Japanese on a Japanese Windows and in English on any other.
 
 **States** (`recording://state`): `needs_model` → `ready` → `recording` ⇄ `paused` →
@@ -176,12 +177,13 @@ last-used source; the screenshot, important-mark and cut hotkeys show 「録音�
 
 ## 6. System architecture
 
-All audio, transcription and file work is in Rust; the React UI renders state and sends commands.
+All audio, transcription and file work is in `crates/core`; the Iced UI in `crates/app` renders
+state and calls the core.
 Each source has its own capture and DSP threads, and exactly one worker owns the Whisper model.
 
 | Thread or task | Owns | Sends to |
 | --- | --- | --- |
-| Main (Tauri event loop) | Windows, tray, hotkeys, IPC | Commands into the core, events to the UI |
+| Main (Iced event loop) | The window, tray, hotkeys, popup menus | Calls into the core (blocking ones on a worker) |
 | Capture, one per source | WASAPI client at MMCSS "Pro Audio" priority | Raw chunks (bounded channel, about 2 s) |
 | DSP, one per source | Clock placement, downmix, resampling, VAD, segmenter, level | Jobs to the ASR queue; levels to the UI and `levels.bin` |
 | ASR worker (one) | The Whisper context and one state per source | Post-processing, then the session log and UI |
@@ -194,12 +196,14 @@ nearly fixed (section 8), so merging jobs beats running them in parallel.
 (plus `Vad` for the detector and `AudioDecoder` for files), so the macOS port adds files rather than
 changing the core.
 
-**Stack.** Tauri 2 (small installer, native APIs, a path to macOS); React + TypeScript + Vite
-with Zustand, Tailwind and i18next; `whisper-rs` (whisper.cpp, quantized GGML models, Vulkan on
+**Stack.** All Rust. Iced 0.14 for the UI, drawn with wgpu on DirectX 12 (tiny-skia only where
+wgpu can't start), with `tray-icon` (and its `muda` popup menus), `global-hotkey`, `rfd` file dialogs and
+`cpal` for playback; `whisper-rs` (whisper.cpp, quantized GGML models, Vulkan on
 NVIDIA/AMD/Intel); `wasapi` for all three sources (QPC timestamps, session listing, device
 events); `rubato` to 16 kHz; `earshot` for VAD (pure Rust, nothing like ONNX Runtime to ship);
-`xcap` for screenshots; `typst` for PDF. IPC types are written by hand in `src/ipc/` to match
-Rust. Cargo feature `gpu-vulkan` is the shipped build; without it the build is CPU-only.
+`xcap` for screenshots; `typst` for PDF. The UI calls the core through `ops.rs` and hears from it
+through typed `events::Event`s. Cargo feature `gpu-vulkan` is the shipped build; without it the
+build is CPU-only.
 
 ## 7. Audio capture (Windows)
 
@@ -502,21 +506,19 @@ The status row shows `GPU: <name>` from the Vulkan device list, or `CPU`.
 Dropped on 2026-10-04: 「Agent用にコピー」 (section 11) covers typo cleanup with no API key, and no
 transcript text leaves the PC.
 
-## 14. IPC contract
+## 14. Core and UI
 
-Rust is the source of truth. Commands are in `src-tauri/src/commands.rs`, events in `events.rs`,
-mirrored by hand in `src/ipc/` with camelCase names on both sides. Every command error is
-`{ code, message }` with an `E_*` code from `error.rs`. Notices carry an i18n key and params, so
-Rust never formats UI text.
-
-A new command needs its name in `src-tauri/build.rs` and `allow-<command>` in
-`capabilities/default.json`. The webview gets only the app's commands, `core:default` and window
-dragging; no plugin command is reachable from it, because the clipboard, dialogs, opener,
-notifications and store are all used from Rust.
+The core is the source of truth. What the UI asks of it is a plain function in
+`crates/core/src/ops.rs`, run off the UI thread; what the core tells the UI is an `events::Event`
+(state, levels, segments, partials, screenshots, markers, lag, finishing progress, model status
+and downloads, saved sessions, notices), sent through the app's `bridge`. Every error is an
+`AppError` with an `E_*` code from `error.rs`. Notices carry an i18n key and params, so the core
+never formats UI text. What only the shell can do (the clipboard, notifications, quitting) the
+core asks through `host::Shell`.
 
 ## 15. Settings
 
-Settings are in `settings.json` through `tauri-plugin-store`; `src-tauri/src/settings.rs` defines
+Settings are in `settings.json` in the config folder; `crates/core/src/settings.rs` defines
 every key and default. Loading never fails: unknown keys are dropped, wrong types and missing keys
 get defaults, ranges are clamped. Internal state that is not a user choice (setup done, GPU
 failure, benchmark results) lives in `state.json`.
@@ -546,45 +548,51 @@ No telemetry. Logs hold IDs, lengths and timings, never transcript text.
 active session. A panicking ASR job resets the Whisper states and is retried once. A full disk
 stops capture cleanly with `E_DISK_FULL`. Sessions of 3 hours or more are supported.
 
-**Security.** Minimal capabilities (section 14). The CSP allows only the app itself, IPC, `data:`
-and asset URLs; the webview never loads remote content. Models are checked against pinned
-hashes, updates against the updater signature. `open_path` only opens paths inside the output
+**Security.** The app loads no web content. Models are checked against pinned hashes, updates
+against the release key's signature. `open_path` only opens paths inside the output
 root, models or logs.
 
 ## 17. Packaging, distribution and CI
 
-An unsigned NSIS installer on GitHub Releases, installed per user without admin rights, updated
-through the Tauri updater.
+An unsigned NSIS installer on GitHub Releases, installed per user without admin rights, with an
+update check of its own.
 
-- **Installer** (`tauri.conf.json`): NSIS only, `currentUser`, Japanese and English, WebView2
-  bootstrapper embedded for PCs without it.
+- **Installer** (`cargo xtask dist`, cargo-packager's NSIS template): `currentUser`, Japanese and
+  English. Its product name, identifier and publisher are those of the Tauri build's installer,
+  so it installs over a copy from before the Iced rewrite: the same folder, uninstall entry and
+  shortcuts. Before installing it removes Kikitori (the app's earlier name) if present.
 - **Runs on a bare Windows.** The C runtime is linked statically. The Vulkan loader
   (`vulkan-1.dll`) ships next to the exe, so a PC with no GPU driver still starts and runs on the
   CPU. Release builds target AVX2 (AVX-512 builds crash on most Intel consumer CPUs); without
   AVX2 and FMA the app says so instead of crashing.
 - **Licences.** `licenses\` holds Typst's, the Vulkan runtime's and `THIRD-PARTY-NOTICES.txt`,
-  generated at build time by `scripts/licenses.mjs`.
+  written at build time by `cargo xtask dist` (the crates in the exe, whisper.cpp, libopus, the
+  fonts and icons).
 - **Signing.** None; friends click More info → Run anyway. Revisit if people outside the friend
   group use it.
-- **Updater.** Off until signing keys exist; `scripts/enable-updater.mjs` turns it on. Checked
-  at most once a day after launch. Installing asks first, is refused while recording, and
+- **Updater** (`crates/core/src/update.rs`). A release's `latest.json` names the installer and its
+  minisign signature, made with the maintainer's key (the `TAURI_SIGNING_PRIVATE_KEY` secret;
+  the format and key are the Tauri updater's, so copies from before the rewrite update too).
+  Checked at most once a day after launch. Installing asks first, is refused while recording,
+  checks the signature, and runs the installer in passive mode (`/P /UPDATE /R`), which
   relaunches the app.
-- **Versioning.** SemVer, `tauri.conf.json` is the source, `CHANGELOG.md` alongside.
+- **Versioning.** SemVer; the workspace `Cargo.toml` is the source, `CHANGELOG.md` alongside.
 
-**CI** (`.github/workflows/`): `ci.yml` runs lint, type checks, tests and the Vulkan clippy build
-on every push and pull request that changes more than docs; `release.yml` builds and signs
-a draft release from a `v*` tag; `nightly.yml` runs the ignored integration tests on CPU with
-`base-q5`.
+**CI** (`.github/workflows/`): `ci.yml` runs rustfmt, the Vulkan clippy build and the tests on
+every push and pull request that changes more than docs; `release.yml` builds and signs a draft
+release from a `v*` tag, after checking the signature against the app's key; `nightly.yml` runs
+the ignored integration tests on CPU with `base-q5`.
 
 ## 18. Testing and acceptance
 
 Most logic is pure and unit-tested without a model or sound card: segmenter, clock, resampling,
-post-processing, echo guard, job merging, timeline order (mirrored in TypeScript), exports
+post-processing, echo guard, job merging, timeline order, exports
 (`insta` snapshots), the event log and recovery, downloads against a mock server, levels and
-folder names. The UI has Vitest tests for the stores and a check that `ja.json` and `en.json`
-have the same keys.
+folder names. The UI has unit tests for its models and screens' logic, a check that `ja.json` and
+`en.json` have the same keys, and preview tests that draw each screen, light and dark, to PNG
+without opening a window (`crates/app/src/preview.rs`).
 
-**Integration harness** (`src-tauri/tests/pipeline.rs`, `#[ignore]`d). `FileSource` plays WAV
+**Integration harness** (`crates/core/tests/pipeline.rs`, `#[ignore]`d). `FileSource` plays WAV
 fixtures through the real pipeline: a "meeting" of Japanese speech with pauses, and a
 two-channel file (left = mic, right = app) for labels and echo. Fixtures are built from CC0 and
 public-domain sources by `tests/fixtures/build_fixtures.py`. The metric is character error rate

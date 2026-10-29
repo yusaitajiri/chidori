@@ -1,6 +1,6 @@
 # Test fixtures
 
-The integration harness (`src-tauri/tests/pipeline.rs`) plays these through the real pipeline.
+The integration harness (`crates/core/tests/pipeline.rs`) plays these through the real pipeline.
 The audio is generated rather than committed:
 
 ```
@@ -23,7 +23,7 @@ This needs ffmpeg on `PATH` and writes `tests/fixtures/generated/` (git-ignored)
 | --- | --- | --- |
 | Audio | LibriVox recording of 新美南吉『ごんぎつね』, archive.org item [`gongitsune_um_librivox`](https://archive.org/details/gongitsune_um_librivox), chapters 4 and 5 (`gongitsune_04_niimi_64kb.mp3`, `gongitsune_05_niimi_64kb.mp3`) | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) |
 | Reference text (`ref/gon4.txt`, `ref/gon5.txt`) | 青空文庫 図書カード No.628『ごん狐』 (新美南吉, died 1943) | Public domain |
-| Benchmark clip (`src-tauri/resources/bench_ja.wav`) | Same recording, chapter 4, 4.0–14.0 s | CC0 1.0 |
+| Benchmark clip (`crates/app/resources/bench_ja.wav`) | Same recording, chapter 4, 4.0–14.0 s | CC0 1.0 |
 | English audio | LibriVox recording of Jonathan Swift, "A Meditation Upon A Broomstick", archive.org item [`nonfiction008_librivox`](https://archive.org/details/nonfiction008_librivox) (`meditation_upon_a_broomstick_swift_tc_64kb.mp3`), first 60 s | [Public domain](http://creativecommons.org/licenses/publicdomain/) |
 
 The script verifies each download against a pinned SHA-256 and cuts the LibriVox preamble and

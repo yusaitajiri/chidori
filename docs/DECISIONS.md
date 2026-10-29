@@ -5,15 +5,35 @@ found a reason to deviate.
 
 ## Build and toolchain
 
-- **Tauri 2.12.1**, the latest 2.x release. Tauri 3 is still alpha.
-- **Exact pins.** Drift-prone crates (`tauri*`, `whisper-rs`, `wasapi`, `xcap`, `earshot`,
-  `rubato`, `ulid`, `typst*`, `zip`) are pinned with `=`; everything else is pinned by
-  `Cargo.lock` and `pnpm-lock.yaml`, which are committed.
-- **Hand-written IPC types** (`src/ipc/*.ts`) instead of `tauri-specta`, which is still a
-  release candidate (2.0.0-rc.25). The Rust side is the source of truth; field names are camelCase.
+- **Iced 0.14 instead of Tauri and React** (from 0.6). The WebView2 that drew the Tauri UI was
+  most of the app's memory: 99 of 153 MB at idle with the model loaded, and the line cost 18% of
+  a core while recording (0.5.1, measured 2026-10-28 with the window in view). A spike of the
+  recording window in Iced used 12 MB drawing on the CPU (tiny-skia) and about 119 MB plus 89 MB
+  of GPU memory through wgpu (Vulkan; DX12 69 MB).
+- **The UI draws on the GPU through DirectX 12** (wgpu, `WGPU_BACKEND=dx12` set at startup
+  unless already set). Measured in the finished app (release, turbo-q5, window in view):
+
+  | | Idle RAM | Recording RAM | Recording CPU |
+  | --- | --- | --- | --- |
+  | 0.5.1, WebView2 | 153 MB | 180 MB (silence) | 18% (silence) |
+  | wgpu, Vulkan | 160 MB | 200 MB | 11.7% |
+  | wgpu, DX12 | 114 MB | 147 MB | 9.8% |
+  | tiny-skia (CPU) | 63 MB | 98 MB | 11.4% |
+
+  Recording rows are with speech being transcribed, except 0.5.1's. Vulkan's driver costs about
+  45 MB more than DX12 for the same frames. tiny-skia is lighter still and no slower here; GPU
+  drawing was the maintainer's choice. tiny-skia stays compiled in as the fallback where wgpu
+  can't start (no GPU driver), and `ICED_BACKEND=tiny-skia` picks it by hand.
+- **A Cargo workspace**: `crates/core` (no UI, no windowing), `crates/app` (the Iced UI and the
+  shell: tray, hotkeys, popup menus, dialogs, updater) and `xtask` (the installer build). The core
+  keeps the module layout it had under Tauri; Tauri's `AppHandle` became `host::AppHandle`, its
+  JSON events typed `events::Event`s, and its commands `ops.rs` functions.
+- **Exact pins.** Drift-prone crates (`iced`, `tray-icon`, `global-hotkey`, `rfd`, `cpal`,
+  `whisper-rs`, `wasapi`, `xcap`, `earshot`, `rubato`, `ulid`, `typst*`, `zip`) are pinned with
+  `=`; everything else by `Cargo.lock`, which is committed.
 - **whisper.cpp optimization on MSVC.** The `cmake` crate replaces CMake's per-config flags with
   `cc`'s, which carry no optimization level on MSVC, so whisper.cpp built unoptimized: model load
-  went from 9 s to 84 s and CPU RTF from 0.39 to 3.5. `src-tauri/.cargo/config.toml` sets
+  went from 9 s to 84 s and CPU RTF from 0.39 to 3.5. `.cargo/config.toml` sets
   `CMAKE_{C,CXX}_FLAGS_RELEASE` back to `-O2 -Ob2 -DNDEBUG`, and the same for
   `RELWITHDEBINFO`, the config dev builds use (they were unoptimized too).
 - **Static C runtime.** `.cargo/config.toml` adds `-C target-feature=+crt-static` for the MSVC
@@ -21,10 +41,10 @@ found a reason to deviate.
   so it can't). The release exe imports no `vcruntime140.dll` or `msvcp140.dll`; it imports
   only the Universal CRT (`api-ms-win-crt-*`), which is part of Windows 10 and 11.
 - **Vulkan loader bundled.** whisper.cpp's Vulkan backend links `vulkan-1.dll`, which only GPU
-  drivers install, so the exe would not start on a PC without one. `npm run build:gpu` downloads
+  drivers install, so the exe would not start on a PC without one. `cargo xtask dist` downloads
   LunarG's `VulkanRT-X64-1.4.363.0-Components.zip` (pinned SHA-256 for the zip and the DLL) into
-  the git-ignored `src-tauri/resources/vulkan/`, and `tauri.gpu.conf.json` installs
-  `vulkan-1.dll` next to the exe with its licence in `licenses\`. With no driver the loader
+  the git-ignored `crates/app/resources/vulkan/`, and the installer puts `vulkan-1.dll` next to
+  the exe with its licence in `licenses\`. With no driver the loader
   reports no devices and the app runs on CPU.
 - **Installer size: about 22 MB**, over the spec's 15 MB target (section 16). Most of the
   difference is the Typst compiler linked in for PDF export: before it, the installer was
@@ -37,13 +57,13 @@ found a reason to deviate.
   written in; `cargo fmt --check` runs in CI.
 - **Licence: MIT**, the spec's default for a public repository.
 - **Third-party notices are generated at build time.** MIT, BSD and Apache-2.0 ask for their
-  notices to travel with the binary, so `build:gpu` runs `scripts/licenses.mjs`, which writes
+  notices to travel with the binary, so `cargo xtask dist` writes
   `licenses\THIRD-PARTY-NOTICES.txt` (about 1 MB): each distinct licence text once, with the
   packages that ship it. It covers the crates linked into the exe (from `cargo metadata`; build
   scripts and proc macros only run while compiling), whisper.cpp (MIT, inside whisper-rs-sys),
-  and the bundled frontend packages plus Tailwind's base styles. Packages that ship no licence
+  libopus, and the fonts (OFL) and icons (ISC) the UI embeds. Packages that ship no licence
   file are listed with their declared licence and source. Generating it rather than committing
-  it means it can't go stale; a CPU `tauri build` leaves it out, like the Vulkan loader. Typst's
+  it means it can't go stale. Typst's
   bundled fonts are not compiled in (`typst-assets` without `fonts`); hayagriva's CSL styles
   (CC BY-SA 3.0) are, and its notice in the file covers them.
 - **CPU baseline: AVX2.** Local builds use `GGML_NATIVE` (AVX-512 on a Zen 5 CPU). Release
@@ -52,11 +72,16 @@ found a reason to deviate.
   and shows 「このPCのCPUは文字起こしに対応していません」 instead of crashing.
 - **Vulkan builds need a short target directory.** ggml-vulkan builds `vulkan-shaders-gen` as a
   nested CMake project; under a normal checkout its MSBuild FileTracker paths pass 260 characters
-  (error FTK1011). `npm run dev:gpu` / `npm run build:gpu` default `CARGO_TARGET_DIR` to
-  `%USERPROFILE%\.kt`; CI uses a short path too. The Vulkan SDK is needed only to build.
-- **`beforeDevCommand` / `beforeBuildCommand` use `npm run`**, which works wherever Node is
-  installed; pnpm is reached through corepack and may not be on `PATH`.
-- **Linting** uses oxlint (the Vite template's default) rather than ESLint.
+  (error FTK1011). Builds with `gpu-vulkan` use `CARGO_TARGET_DIR=%USERPROFILE%\.kt`; CI uses a
+  short path too. The Vulkan SDK is needed only to build.
+- **The installer is cargo-packager's NSIS**, run by `cargo xtask dist` with a config it writes
+  (absolute paths, so it runs from anywhere). Its template comes from Tauri's, so it takes the
+  same `/P` (passive), `/R` (relaunch) and `/UPDATE` switches and writes the same uninstall entry
+  and install folder for the same product name, identifier and publisher (`yusai`, as the Tauri
+  installer recorded it).
+- **No Node in the build.** The brand's tokens, logos and fonts are vendored in
+  `crates/app/brand/` (fonts as TTF from Google Fonts' repository, which the UI embeds), the
+  Lucide icons as SVG in `brand/icons/`, and the translations in `crates/app/i18n/`.
 
 ## Transcription
 
@@ -218,8 +243,10 @@ found a reason to deviate.
   sources together by position (a source that sent nothing for 1.5 s stops holding the mix
   back), fills a pause with silence, and encodes 20 ms frames. Opus (libopus 1.6, built from
   `opusic-c`'s bundled source) at 24 kb/s keeps speech clear in about 11 MB an hour, against
-  115 MB for WAV; WebView2 plays and seeks Ogg Opus itself. A page, and a flush, about once a
-  second: a crashed recording's file plays up to its last second, checked in Chromium. One
+  115 MB for WAV. The app plays it through `cpal`, decoding with the core's own Ogg Opus reader
+  (`screens/main/playback.rs`); with no seek in the reader, playing from a point decodes up to
+  it, which takes a moment far into an hour. A page, and a flush, about once a second: a crashed
+  recording's file plays up to its last second. One
   mixed file rather than one per source, because playback is for listening back, where both
   sides belong together. A continuation writes the next file, as an Ogg stream cannot simply be
   appended to; playing runs from one into the next. Encoding takes well under 1% of a core. It
@@ -255,8 +282,7 @@ found a reason to deviate.
   folder named after the session (`-2` if taken) holding `transcript.md` and `images/`, the
   session folder's own layout, so links stay `images/…`. On, the same two go into one ZIP (no
   PDF), written through a `.zip.part` file so a failure leaves nothing half-written. The switch
-  is remembered in the WebView's local storage; the compact window's menu has both as separate
-  entries.
+  is remembered while the app runs; the compact window's menu has both as separate entries.
 - **Every export asks where to save it** and none is written into the session folder: a save
   dialog over the window, starting in Downloads, suggests the session folder's name. Typst
   copies its screenshots into `<name>_images/` beside the file (named after it, so an `images/`
@@ -271,11 +297,11 @@ found a reason to deviate.
   this app's logo is the plover of 波に千鳥, so it is Chidori — 文字起こし / Transcription. The name
   alone sits in the window title, title bar, tray and notifications; the name with its descriptor
   in the README titles and the store-like places.
-- **Everything was renamed**, the identifier included (`dev.yusai.chidori`, crate `chidori_lib`,
+- **Everything was renamed**, the identifier included (`dev.yusai.chidori`, crates `chidori` and `chidori-core`,
   the GitHub repository `yusaitajiri/chidori`, whose old address GitHub redirects, so Kikitori's
-  updater still finds new releases). Tauri names the app's folders after the identifier and the
-  install after the product name, so two things carry existing installs over:
-  `src-tauri/windows/hooks.nsh` silently uninstalls Kikitori after Chidori installs (a silent
+  updater still finds new releases). The app's folders are named after the identifier and the
+  install after the product name, so two things carry existing installs over: the installer
+  silently uninstalls Kikitori before installing Chidori (`REMOVE_KIKITORI` in `xtask`; a silent
   uninstall keeps the app data), and on its first launch Chidori moves `%APPDATA%` and
   `%LOCALAPPDATA%\dev.yusai.kikitori` into its own folders entry by entry (never copying the
   models) and renames `Documents\Kikitori` to `Documents\Chidori` while the save folder setting
@@ -286,12 +312,12 @@ found a reason to deviate.
 
 ## UI
 
-- **Look: the kamon brand.** The UI is built on `@yusai/kamon-react` (the `kamon-brand`
-  repository, pinned to a `react-v…` tag): its tokens and `ui.css`, imported in `index.css` with
-  `ui.css` in Tailwind's `components` layer so utilities can still adjust a kit element. The app's
-  own `--kk-*` roles all point at brand tokens, so light and dark follow the brand. A warm grey
-  ground (`surface`), raised cards with hairlines, ink, and one colour, Chidori's 朱 (`accent`,
-  through `data-app="chidori"` on `<html>`). 朱 marks what you can act on and what is selected, as
+- **Look: the kamon brand.** The kit's `tokens.json` (from `@yusai/kamon-react`, the
+  `kamon-brand` repository pinned to a `react-v…` tag, copied by `pnpm brand`) becomes Rust
+  constants in `build.rs`, with Chidori's 朱 as `accent`; `widgets.rs` holds the kit's components
+  (the primary with its inner line, the frame, the rule, switches, fields, dialogs) built only
+  on those tokens, and `theme::p()` gives the light or dark palette, following Windows. A warm
+  grey ground (`surface`), raised cards with hairlines, ink, and one colour, Chidori's 朱. 朱 marks what you can act on and what is selected, as
   the brand asks, and in this app also **the voice you hear**: 相手's line and name, the live mark
   and the tint under the line. That is the one place the app goes past the brand's rule, because
   the line and its speaker are what the app is about, and the plover in the logo is the same 朱.
@@ -320,18 +346,19 @@ found a reason to deviate.
   line within that time, so the note is for slow PCs, where text can take many seconds. 仕上げ中
   has a spinner too, since one long stretch can keep its count still.
 - **Type.** Zen Kaku Gothic New (400 and 500) and IBM Plex Mono for numbers that line up (the
-  timer, times), bundled from `@fontsource` so the window never fetches fonts: the kit's
-  `fonts.css`, which loads them from Google Fonts, is left out. The transcript is the brand's body,
+  timer, times), embedded in the exe (TTF from Google Fonts' repository, OFL) so the window never
+  fetches fonts. The transcript is the brand's body,
   16 px on 27 px. The windows are small (380 and 420 px wide), so the UI's own text stays at 12 to
   14 px with `body-small` as the base, rather than the brand's 16 px everywhere.
-- **The line is real sound** (`components/Deck.tsx`, `lib/line.ts`, `store/line.ts`). While
+- **The line is real sound** (`screens/main/deck.rs`, `screens/main/live_line.rs`,
+  `model/line.rs`). While
   recording, the line across the window is drawn from the levels the backend sends ten times a
   second: 相手 rises above it in 朱 and 自分 dips below it in ink (a single source rises above,
   whichever it is), lightly blurred so a lone step is not a spike. A pen tip moves right from
   where the line starts and, near the end, the line scrolls under it. Screenshots are dots on
   the baseline and a pause leaves a dotted gap. While finishing, the steps not yet written are
   grey and fill in as the queue empties, with the pen waiting where the written part ends. The
-  steps live outside React (`lineHistory`, fed in `App.tsx`), so the line survives a visit to
+  steps belong to the app (`LineHistory`, fed in `app.rs`), so the line survives a visit to
   History or Settings. The line is the edge of the tint, so it runs from edge to edge: the pen
   starts in line with the buttons under it (14 px, compact 12), the tint rises to the top of the
   line, and where nothing is written, before the pen started and ahead of it, the line is grey
@@ -383,16 +410,16 @@ found a reason to deviate.
   and nothing sent in silence. A read takes about 30 µs and listing the sessions about 2 ms, so
   one app costs ~0.15% of a core. The wave steps ten times a second instead of gliding every frame
   like the recording's line: redrawn at the screen's rate it cost about 40% of a core on a 165 Hz
-  screen (Chromium, measured), stepping about 4%, and nothing once it is quiet.
+  screen (measured in the web UI before the rewrite), stepping about 4%, and nothing once it
+  is quiet.
 - **Navigation is words in the title bar**: 録音 · 履歴 · 設定 in the expanded window, the current
   one in the accent's tint (the brand's active nav), 録音 with a small 朱 mark while recording; the compact window keeps its icons. While
   recording the title bar shows the state and the source in place of the name, and away from the
   main view that leads back to the recording. No bottom tabs: a phone pattern that would add a
   second way to navigate, the largest coloured area in the app, and a second layer of controls
   under the deck while recording.
-- **One title bar.** It is one element over every view (`App.tsx` renders it outside the view it
-  keys by place), so switching 録音 · 履歴 · 設定 never rebuilds it; the back arrow follows the view
-  (`lib/nav.ts` `backOf`). The compact toggle is on every page but the wizard: only 録音 has a
+- **One title bar** over every view (`screens/titlebar.rs`, drawn by `app.rs` above the view it
+  shows); the back arrow follows the view. The compact toggle is on every page but the wizard: only 録音 has a
   compact form, so shrinking from 履歴 or 設定 goes to 録音.
 - **Big headers.** History, Settings, the model list, the wizard and a finished session open
   with a big title on the ground above a hairline. A finished session's header scrolls with its
@@ -437,10 +464,10 @@ found a reason to deviate.
   own: the finished session's row already holds four buttons in the compact window, and
   continuing is rarer than starting anew. It records with the source the picker holds and opens
   the recording view; while something records, it is greyed out.
-- **A session has one ⋯ menu** (`lib/sessionMenu.ts`, docs/OBJECTS.md), wherever it is shown, so
+- **A session has one ⋯ menu** (`screens/session_menu.rs`, docs/OBJECTS.md), wherever it is shown, so
   it offers the same actions open or as a row: 復元 (a crashed session), 続きを録音, フォルダを開く
   and 削除. A History row, which has no deck or header, adds コピー ▸, 書き出し…, 名前を変更 and
-  プロジェクト ▸. Rename and delete confirm in dialogs shared by both (`Dialogs.tsx`). Deleting
+  プロジェクト ▸. Rename and delete confirm in dialogs shared by both (`screens/dialogs.rs`). Deleting
   the session on screen takes it off: the main view goes back to 開始, a past session to 履歴.
 - **A finished session's buttons**: 再生, コピー ▾, 書き出し, which opens a dialog to pick
   Markdown, PDF or Typst (the compact window, too small for it, shows a menu), the ⋯ menu, and
@@ -470,28 +497,23 @@ found a reason to deviate.
   anywhere. Dialogs are centred sheets in the kamon's frame with full-width buttons. Transcript
   markers (pause, reconnect) keep a straight line. Weights are 400 and 500 only, the two the
   brand's font is bundled in.
-- **Japanese line breaks** use `word-break: auto-phrase` (WebView2, with `lang="ja"`), so words
-  such as ヘッドホン and ください no longer split across lines.
-- **One animation loop** (`lib/frameLoop.ts`) runs only while something moves: the live line
-  redraws every frame only while recording, so an idle window stays under the 1% CPU target.
-  With Windows' animation effects off, the dot's changes jump to their end and the line steps
-  ten times a second instead of gliding. It draws at most about 60 frames a second: on a 165 Hz
-  screen the recording line was drawn 168 times a second and the page took about half a core;
-  capped, it draws on every third refresh (55 a second) and takes about a quarter (Chromium,
-  measured). The compact window, on screen through whole meetings, draws its line 30 times a
-  second (an animation's `fps`): 12% of a core instead of 20%. What is left is the browser
-  painting and compositing the redrawn line; building it in JavaScript is about 1% of a core.
-  Minimized or in the tray nothing is drawn at all.
-- **A minimized or hidden window tells WebView2 it is hidden** (`window::sync_webview_visibility`,
-  `SetIsVisible(false)`). WebView2 otherwise keeps the page `visible` and the live line drawing
-  (about 1.6% CPU, measured). Hidden, animation frames stop and timers slow down, but backend
-  events still arrive, so the transcript keeps up. Tauri's `backgroundThrottling` option only
-  applies to WebKit.
+- **Japanese line breaks** follow Unicode's line breaking (cosmic-text), so a line can break
+  inside a word such as ヘッドホン or ください. The web UI broke between phrases
+  (`word-break: auto-phrase`); doing that here needs a phrase splitter of our own.
+- **Only what moves is redrawn.** The app ticks only while something moves: the live line about
+  60 times a second while recording (30 in the compact window, on screen through whole
+  meetings), the waves and spinners 20 times, toasts 10; otherwise it draws only when something
+  changes. Minimized or in the tray nothing ticks at all, and the core stops reading the apps'
+  meters (`host::set_ui_hidden`), while its events still arrive, so the transcript keeps up.
+- **The transcript builds only the rows in view** (`screens/main/transcript.rs`): rows not yet
+  drawn get an estimated height and report their real one once drawn, inside one `lazy` keyed on
+  the transcript's version, so a line frame never rebuilds the transcript. Iced lays out what it
+  is given every frame: in the spike, 2000 plain rows cost 13% of a core and 71 MB.
 - **The transcript runs on under the deck to its line.** The line lies 30 px into the deck; if
   the transcript stopped at the deck's top, text would vanish at an invisible edge above the
-  wave. Once there is a transcript the expanded deck reaches up under it by that much
-  (`kk-deck-under`, a negative margin) and is see-through above the line: the text goes right up
-  to the wave and only the tint under the line covers it. The deck lets the pointer through to
+  wave. Once there is a transcript the expanded deck reaches up under it by that much and is
+  see-through above the line: the text goes right up to the wave and only the tint under the
+  line covers it. The deck lets the pointer through to
   the text, except on its buttons and, after a recording, a band around the line where pointing
   shows the time. Scrolled to the end, the last line still rests clear of the deck.
 - **Transcript.** Lines are grouped into turns: with both 相手 and 自分 recorded the speaker,
@@ -530,18 +552,23 @@ found a reason to deviate.
   since the compact window's two lines leave markers out.
 - **The timer leaves out paused time** (`StatePayload.elapsedMs`); session times still count
   it, so the clock times in the transcript stay true.
-- **Animations** are CSS plus the deck's own frames; what is above the line fades between the
-  start screen and a session. Everything honours `prefers-reduced-motion`.
-- **The session viewer has its own transcript store** (`createTranscriptStore`), so a
+- **Animations** are the deck's own: the start, settling into the whole session, and 新しい録音
+  rising back. Rows and buttons don't fade in, and Windows' reduce-motion setting isn't read yet.
+- **The session viewer has its own transcript** (`screens/viewer.rs`), so a
   recording that runs while a past session is open keeps receiving its lines.
-- **The … menu is a native popup menu**, because the compact window (380×170) is too small to
-  hold a dropdown and a webview cannot draw outside its window.
-- **Popup menu items are created one by one** (`src/lib/popupMenu.ts`). Tauri 2.12 drops the
-  Rust side of items written inline in `Menu.new({ items })` once the menu is built, and with it
-  their click handlers, so the menu opened but no item did anything. Items made with
-  `MenuItem.new()` stay in the resource table; they are closed when the next menu opens.
-- **Compact source picker** opens as an overlay over the whole window under the title bar, in a
-  portal so the deck's layers cannot cover it.
+- **The … menu is a native popup menu** (`native/menu.rs`, through `muda`), because the compact
+  window (380×170) is too small to hold a dropdown and a menu drawn by the app cannot reach past
+  its window. A pick comes back as an id, routed by its prefix to the screen that opened it.
+- **The source lists are drawn**, not native (`screens/main/popover.rs`), because they show each
+  app's icon and live wave. The compact picker opens over the whole window under the title bar.
+- **No screen reader or keyboard navigation yet.** Iced 0.14 exposes nothing to screen readers
+  and moves keyboard focus only between text boxes, so the web UI's `aria-label`s and tab order
+  have no counterpart. Icon buttons keep their names as tooltips; Escape, Enter and the hotkeys
+  work. Revisit when Iced ships accessibility.
+- **Text boxes save on Enter** (and the check button): Iced has no event for a box losing focus.
+  設定's word list and title format also save at the next click anywhere.
+- **One primary per view, strictly**: 使う in the model list and テストを開始 in the wizard's mic
+  step are secondary buttons, since a list can hold several models and 次へ is the step's primary.
 - **Closing the window** hides it to the tray only while recording or finishing; when idle it
   quits (FR-93 only covers the recording case).
 - **Window position** is remembered with `tauri-plugin-window-state`; the size follows the
@@ -574,35 +601,32 @@ found a reason to deviate.
 
 ## Updates
 
-- **Off until keys exist.** The updater plugin requires `plugins.updater.pubkey`, and the keys
-  are the maintainer's secret, so the plugin is registered only when that config is present.
-  `scripts/enable-updater.mjs <github-owner>` writes the public key, the GitHub Releases endpoint,
-  `installMode: "passive"` and `createUpdaterArtifacts` after `tauri signer generate`.
-- **Launch check** runs 10 s after launch (the window must be listening for the banner) and at
-  most once a day; the time is recorded when the check runs, whatever its result. A found update
-  is a banner 「新しいバージョン x.y.z があります」 with 「更新する」.
+- **The app checks for itself** (`crates/core/src/update.rs`, `crates/app/src/updater.rs`): it
+  reads `latest.json` from the newest GitHub release, downloads the installer it names and checks
+  its minisign signature against `crates/core/src/update.pub`. The manifest format, the key and
+  the installer's switches are the Tauri updater's, so copies installed before the rewrite take
+  the first Iced release as an ordinary update, and later ones the same way.
+- **Launch check** runs 10 s after launch and at most once a day; the time is recorded when the
+  check runs, whatever its result. A found update is a banner 「新しいバージョン x.y.z があります」
+  with 「更新する」.
 - **Install** is refused while recording or finishing, and the recorder lock is held from the
   last check until the installer starts, so a recording can't begin in between. The passive NSIS
-  installer closes the app and starts it again (`/R`); the window position is saved first.
-- `requireSignedVersion` is not enabled yet: it rejects signatures that don't carry the version,
-  and it is unverified whether Tauri CLI 2.12.1 writes it.
+  installer closes the app and starts it again (`/R`).
+- **Release signatures are checked before publishing**: `xtask dist` verifies the new installer's
+  `.sig` against the app's public key, so a release signed with another key fails in CI instead
+  of on every user's PC.
 
 ## Security
 
-- **Capabilities.** `build.rs` registers the app's commands with `AppManifest`, so each needs an
-  explicit `allow-*` permission; `capabilities/default.json` grants the main window those plus
-  `core:default` and window dragging. No plugin command is reachable from the webview: the
-  clipboard, dialogs, opener, notifications and store are all used from Rust.
-- **CSP** follows the spec and adds the Windows forms Tauri uses: `ipc:`/`http://ipc.localhost`
-  for IPC and `http://asset.localhost` for past sessions' screenshot thumbnails (`img-src`) and sound
-  (`media-src`; without it the default `'self'` blocks playback in release builds, while dev builds,
-  served by Vite, get no CSP at all).
-- **`open_path`** only opens paths inside the output root, the models folder or the log folder.
-- **TLS** uses rustls with the ring provider (installed at startup), matching the updater plugin.
+- **No web content.** The UI is native; nothing renders HTML or runs script, so the Tauri build's
+  capability list and CSP have no counterpart.
+- **Opening a folder** only opens paths inside the output root, the models folder or the log
+  folder (`ops::allowed_path`).
+- **TLS** uses rustls with the ring provider (installed at startup).
 
 ## Test assets
 
-- **Benchmark clip** `src-tauri/resources/bench_ja.wav`: 10 s (4.0–14.0 s) of chapter 4 of the
+- **Benchmark clip** `crates/app/resources/bench_ja.wav`: 10 s (4.0–14.0 s) of chapter 4 of the
   LibriVox recording of 新美南吉『ごんぎつね』, released under **CC0 1.0**
   (archive.org item `gongitsune_um_librivox`). 16 kHz mono 16-bit, 320 KB.
 - **Integration fixtures** are built by `tests/fixtures/build_fixtures.py` from the same CC0

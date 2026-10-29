@@ -1,0 +1,12 @@
+[package]
+name = "xtask"
+description = "Builds Chidori's installer: cargo xtask dist"
+version = "0.0.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+base64 = "0.23.1"
+minisign-verify = "=0.3.0"
