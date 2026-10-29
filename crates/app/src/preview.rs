@@ -38,6 +38,8 @@ pub fn core() -> (AppHandle, tempfile::TempDir) {
 pub fn app() -> (App, tempfile::TempDir) {
     let (core, dir) = core();
     let (mut app, _) = App::new(core);
+    // A fresh settings file takes the language of Windows, so pin it or an English runner sees English.
+    app.settings.locale = chidori_core::settings::Locale::Ja;
     app.info.setup_done = true;
     app.rec.state = chidori_core::events::UiState::Ready;
     (app, dir)
